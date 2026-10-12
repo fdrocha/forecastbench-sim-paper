@@ -19,7 +19,15 @@ The producer is Fabio Rocha's `fdrocha/forecastbench-sim` at `8c70972b698f079d54
 
 ## FreeCiv
 
-The producer and its production settings are on the `freeciv-v3` branch of `forecastingresearch/forecastbench-sim` (paper reporting was extracted at `4e35dd20`; branch head `7fa46072`). They move into `production/freeciv/` as part of the `freeciv-v3` merge.
+The producer is Jaeho Lee's `freeciv-v3` branch of `forecastingresearch/forecastbench-sim` at `daca5a15af759f4124960e30694bff15256b7f5d`. Its reusable code (question generation, elicitation harness, scorers, replay fleet) is in forecastbench-sim's `worlds/freeciv/fbsim_v3`. [freeciv](freeciv) holds the launchers, run records and environment from that commit's `worlds/freeciv/fbsim_v3`, at the same relative paths:
+
+- **Launchers.** `run/full_run.sh` and `launch.sh` (run 1), `launch_run2.sh` and `launch_v2.sh` (run 2), `launch_effort_v2.sh` (effort check), `smoke_run.sh`, `build_run2.sh` (scoring and tables), `finalize_run2.sh` (delivery into the paper), `rebuild_natcond_rows.py`.
+- **Run records.** `run/ELICITATION.md`, `PREFLIGHT_prompts.md`, `PREFLIGHT_v2.md`, `RUN2_PLAN.md`, and `corpus_docs/family_specs_rev27_2026-09-04.json`. The paper reports run 2b, the batched arm in `results/run2b_2026-09-20/batched`, with the natural-conditional arm of `results/run2_2026-09-20/natcond` (`RUN2_PLAN.md`, sections F and G).
+- **Replay fleet as run.** `fleet/pod_bundle/freeciv_world_as_run.patch` (applied to forecastbench-sim's `worlds/freeciv` since then), and the pod's `pyproject.toml`, `uv.lock` and `fbsim-core` copy.
+
+The rest of that commit's files are in the private data archive at the same relative paths under `datasets/freeciv-source/worlds/freeciv/fbsim_v3`: the question sets of draw v1.8 with truth and the continuous normalization constants (`sets/draw_v1/`), the eight turn-60 reports the models read (`reports/seed*/turn_060_report.txt`), the model panels (`run/models_v1.csv`, `run/models_v2.csv`) and the replay run's corpus docs (`corpus_docs/`, including `CHANNEL_READINESS.md`, also at `run/` in the producer). The branch's `README.md`, `sets/draw_v1/README.md` and the selection fractions behind the inverse-selection weights (`sets/draw_v1/selection_fractions_bank_tails_mirrors.json`) are under `datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1`.
+
+Raw responses, per-item scores and replay outcomes are in the private data archive (`datasets/freeciv-source` and `datasets/freeciv-source-deliveries`). The candidate pools and per-world pickles were not committed and are not in the archive. Analysis scripts behind the paper's FreeCiv numbers are in `src/fbsim_paper/assets/freeciv`.
 
 ## Not here
 
