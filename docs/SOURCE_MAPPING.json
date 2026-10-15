@@ -148,7 +148,7 @@
     "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/update_shared_tables.py",
     "source_sha256": "03fec1c45b843cf99333914cb782175a65f5c02e8e0e35f0a8e18240d2a04542",
     "destination_sha256": "03fec1c45b843cf99333914cb782175a65f5c02e8e0e35f0a8e18240d2a04542",
-    "change": "Unchanged paper generator"
+    "change": "Paper generator; skips validation tables absent from the manuscript (hand-frozen copies since the 2026-09-24 code freeze)"
   },
   {
     "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/paper/make_freeciv_tables.py",
@@ -183,7 +183,7 @@
     "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/deliver_backing.py",
     "source_sha256": "bfea92486c824e8fbff09eb97d82396685d88cd74e8a95d46ce914a32fd34264",
     "destination_sha256": "bfea92486c824e8fbff09eb97d82396685d88cd74e8a95d46ce914a32fd34264",
-    "change": "Unchanged paper generator"
+    "change": "Paper generator; its README text follows the manuscript's hand-edited copy at 2e57585 (four more rows, mid-range wording)"
   },
   {
     "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/paper/make_freeciv_difficulty_table.py",

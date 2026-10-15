@@ -63,12 +63,24 @@ def main():
  for name in ['validate','reproduce','reproduce-freeciv','reproduce-micropolis']:
   q=s.add_parser(name);q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
   if name.startswith('reproduce'):q.add_argument('--output',type=Path,required=True)
+ q=s.add_parser('build',help='Regenerate the manuscript checkout\'s generated files in place')
+ q.add_argument('steps',nargs='*',help='Any of micropolis, freeciv, starsim (default: all, in that order)')
+ q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
+ q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
+ q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
  a=p.parse_args()
  if a.command=='smoke':
   assert pandemic.crps5([1,1,1,1,1],[1])==0;print(json.dumps(dict(status='PASS',scope='import and synthetic scoring only; no paper inputs')))
  else:
   if a.data_root is None:p.error('Pass --data-root DIR or set FBSIM_DATA_ROOT (in the shell or .env); no default private path is assumed.')
   a.data_root=Path(a.data_root).expanduser()
+  if a.command=='build':
+   if a.paper_root is None:p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')
+   from .build import run
+   try:run(a.steps,a.data_root.resolve(),Path(a.paper_root).expanduser().resolve(),a.allow_dirty)
+   except ValueError as e:p.error(str(e))
+   except subprocess.CalledProcessError as e:sys.exit(f'build failed: {e.cmd[1]} exited with status {e.returncode}')
+   return
   try:
    if a.command.startswith('reproduce-'):
     from .cached import run

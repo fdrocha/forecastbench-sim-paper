@@ -41,11 +41,15 @@ cells of the shared tables (`../hosting_cost_table.tex`, `../roster_table.tex`,
 | `freeciv_results_table.md` | the run log's per-model table: calls, cost, parse rate |
 | `SCORES.md` | leaderboards with item-bootstrap intervals, by set, horizon and block |
 | `family_horizon_scores.csv` | model x set x family x horizon aggregates (difficulty table) |
-| `reliability_bands.csv` | bank reliability: mean forecast and truth in ten bands of q, per model |
+| `reliability_bands.csv` | mid-range reliability: mean forecast and truth in ten bands of q, per model |
 | `model_scores.csv` | the 24 shared models: ECI and ForecastBench overall |
 | `models_v1.csv` or `models_v2.csv` | the run's per-model reasoning mode, effort or budget, output cap, provider pin, list prices |
 | `continuous_norm_constants.json` | the per-family constants that divide the continuous CRPS, fixed at the draw |
 | `COMPOSITION.md` | item counts of the draw by family, horizon, block and anchor game |
+| `freeciv_binary_forecasts.csv` | one row per model and binary question (mid-range, tail, mirror, extra): forecast, replay truth, expected and excess Brier, excess bits; the 231 mid-range questions that anchor cells appear twice, grouped prompt and single prompt |
+| `freeciv_natcond_forecasts.csv` | one row per model and natural-conditional cell: turn-1, turn-2 and no-news forecasts, p(Y), p(Y|X), scores |
+| `freeciv_questions.csv` | every binary question and cell: text, resolution criteria, revealed fact |
+| `freeciv_effort_check.json` | the reasoning-effort check on the grouped prompts: per model, both levels, the 200 questions' constant-0.5 excess, correlations with ECI |
 | `freeciv_numbers.json`, `freeciv_summary.json`, `freeciv_family_summary.json`, `freeciv_validation_stats.json` | every number the FreeCiv prose and figures quote, with its source and method |
 
 Per-item scores (46,176 rows), raw model responses, the question sets with their replay truth, the
