@@ -25,11 +25,16 @@ import score_v2 as sv  # noqa: E402
 ap = argparse.ArgumentParser()
 ap.add_argument("results", nargs="+")
 ap.add_argument("--out", required=True)
-ap.add_argument("--models-file", default=os.path.join(os.environ["FBSIM_SOURCE_ROOT"], "run", "models_v2.csv"))
-ap.add_argument("--capability", default=os.path.join(os.environ["FBSIM_SOURCE_ROOT"], "results", "run1_2026-09-09", "model_scores.csv"))
+ap.add_argument("--models-file", help="default: $FBSIM_SOURCE_ROOT/run/models_v2.csv")
+ap.add_argument("--capability", help="default: $FBSIM_SOURCE_ROOT/results/run1_2026-09-09/model_scores.csv")
 ap.add_argument("--impute-binary", default="0.5")
 ap.add_argument("--natcond-cost-from", default="", help="run-1 wide table: natural-conditional costs for models whose natcond rows carry no cost (reused run-1 forecasts)")
 a = ap.parse_args()
+src = os.environ.get("FBSIM_SOURCE_ROOT")
+if not src and not (a.models_file and a.capability):
+    ap.error("set FBSIM_SOURCE_ROOT or pass both --models-file and --capability")
+a.models_file = a.models_file or os.path.join(src, "run", "models_v2.csv")
+a.capability = a.capability or os.path.join(src, "results", "run1_2026-09-09", "model_scores.csv")
 out = a.out
 os.makedirs(out, exist_ok=True)
 impute = None if a.impute_binary == "none" else float(a.impute_binary)
