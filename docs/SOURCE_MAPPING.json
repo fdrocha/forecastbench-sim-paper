@@ -403,5 +403,54 @@
     "source_sha256": "b4a02261a1766f5c84a9d13114e621a22d055362f3efcfd4ade7260d5693097b",
     "destination_sha256": "b4a02261a1766f5c84a9d13114e621a22d055362f3efcfd4ade7260d5693097b",
     "change": "Native reporting helper; source retained"
+  },
+  {
+    "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/run/results_table.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/results_table.py",
+    "source_sha256": "f263b1c27608f9d875b774522877ae4de7e53b860a6b9e5a3574d5aebdc009a3",
+    "destination_sha256": "b654c89b909e3f205271da08fe0f813690fd74a8f1e55c561bb1ab58832b3ea6",
+    "change": "Run-2 analysis script from freeciv-v3 daca5a15; producer paths replaced by FBSIM_SOURCE_ROOT; imports score_v1 from forecastbench-sim worlds/freeciv/fbsim_v3/run (put that folder on PYTHONPATH); not wired into fbsim_paper commands"
+  },
+  {
+    "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/run/results_table_v2.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/results_table_v2.py",
+    "source_sha256": "573a3a8754cf35799118f0f6b3279171f9e8fea1c45ad2034b0cba6036ff6f5f",
+    "destination_sha256": "827cb2edef689038b06264a784865984c52b560b6b9502f953ab0f2a1002a83b",
+    "change": "Run-2 analysis script from freeciv-v3 daca5a15; producer paths replaced by FBSIM_SOURCE_ROOT; imports score_v2 from forecastbench-sim worlds/freeciv/fbsim_v3/run (put that folder on PYTHONPATH); not wired into fbsim_paper commands"
+  },
+  {
+    "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/run/make_freeciv_aggregates.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/make_freeciv_aggregates.py",
+    "source_sha256": "d744f0c926891f04fbe922ef904a89935779ad80f45e77bedd59a1b0ffc72193",
+    "destination_sha256": "d744f0c926891f04fbe922ef904a89935779ad80f45e77bedd59a1b0ffc72193",
+    "change": "Unchanged run-2 analysis script from freeciv-v3 daca5a15; not wired into fbsim_paper commands"
+  },
+  {
+    "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/run/run2_numbers.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/run2_numbers.py",
+    "source_sha256": "b79d0026d6bea6ca2d98a6bf161b60163a0ab2f4d3ca258505fe22c292acc778",
+    "destination_sha256": "b79d0026d6bea6ca2d98a6bf161b60163a0ab2f4d3ca258505fe22c292acc778",
+    "change": "Unchanged run-2 analysis script from freeciv-v3 daca5a15; not wired into fbsim_paper commands"
+  },
+  {
+    "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/run/compare_runs.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/compare_runs.py",
+    "source_sha256": "c487b7b6920971e2a603982e171788a34226824bf31b9ce19834fca838e10fd8",
+    "destination_sha256": "c487b7b6920971e2a603982e171788a34226824bf31b9ce19834fca838e10fd8",
+    "change": "Unchanged run-2 analysis script from freeciv-v3 daca5a15; not wired into fbsim_paper commands"
+  },
+  {
+    "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/run/effort_check_report.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/effort_check_report.py",
+    "source_sha256": "0b76a292262aac6b11003570d0f3047e52163eb5f54c5a560e3e95925acd16ee",
+    "destination_sha256": "0b76a292262aac6b11003570d0f3047e52163eb5f54c5a560e3e95925acd16ee",
+    "change": "Unchanged run-2 analysis script from freeciv-v3 daca5a15; not wired into fbsim_paper commands"
+  },
+  {
+    "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/run/effort_compare.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/effort_compare.py",
+    "source_sha256": "fa31a71707106f61e0f3f20b6427f2ff07ac646c8f269093647020dab7864a9a",
+    "destination_sha256": "fa31a71707106f61e0f3f20b6427f2ff07ac646c8f269093647020dab7864a9a",
+    "change": "Unchanged run-2 analysis script from freeciv-v3 daca5a15; imports score_v1 from forecastbench-sim worlds/freeciv/fbsim_v3/run (put that folder on PYTHONPATH); not wired into fbsim_paper commands"
   }
 ]

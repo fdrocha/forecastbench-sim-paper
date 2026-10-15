@@ -600,6 +600,181 @@
    "path": "starsim/pandemic-runner-p_death.patch",
    "source": "uncommitted change to worlds/pandemic/pandemic_world/runner.py on a local forecastbench-sim checkout at 65204aa59cfb9fa835cf5b2af8917e02e98a4f26",
    "sha256": "b9e117b4ea6e8c19aaaf6b01f9ef0fe320a1b260b98f70087ce1d7a68a01717f"
+  },
+  {
+   "path": "freeciv/run/full_run.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/full_run.sh",
+   "sha256": "76ff5aa76baea813d97d9774f42804cf3f6d0f1af1b4479c02f1426e5e7e9a1d"
+  },
+  {
+   "path": "freeciv/run/launch.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/launch.sh",
+   "sha256": "45a45167361a2a961236e99c6b6488954487891bb6d78784905cdf864161b764"
+  },
+  {
+   "path": "freeciv/run/launch_v2.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/launch_v2.sh",
+   "sha256": "f097796d7d3657fccadb62f46f2bbb70d22b5c5c85b91472984502b7377f4342"
+  },
+  {
+   "path": "freeciv/run/launch_run2.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/launch_run2.sh",
+   "sha256": "cba6b70daba6efeeb70ce0625157d88ddeb1a2dd2fb7a39a8a5c7806134bae54"
+  },
+  {
+   "path": "freeciv/run/launch_effort_v2.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/launch_effort_v2.sh",
+   "sha256": "0c933c2c9b8b2f34b2562b27eae7ea09b54adc42e12602068c3a97cfb77cc154"
+  },
+  {
+   "path": "freeciv/run/smoke_run.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/smoke_run.sh",
+   "sha256": "21a8223f8dc4b7acc4bbe11e67983a10130ddfe6ae781a1f54a128c998741795"
+  },
+  {
+   "path": "freeciv/run/build_run2.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/build_run2.sh",
+   "sha256": "d6f3d13c35c11258859e035c758524c431b998a5826cf47dab7f4ccb88d1a864"
+  },
+  {
+   "path": "freeciv/run/finalize_run2.sh",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/finalize_run2.sh",
+   "sha256": "6241cc50db9521dc76d5baddffddd9b60e1f41d08b57d3744deea24d06d78dac"
+  },
+  {
+   "path": "freeciv/run/rebuild_natcond_rows.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/rebuild_natcond_rows.py",
+   "sha256": "9a15a88f7b9849d3831a594ca2df2f127c47213a7fb4de90006ed0446888787b"
+  },
+  {
+   "path": "freeciv/run/ELICITATION.md",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/ELICITATION.md",
+   "sha256": "d436e7dee19f684d695d30f113227b6c4136f50d6721dcb3d688c72c666b35a9"
+  },
+  {
+   "path": "freeciv/run/PREFLIGHT_prompts.md",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/PREFLIGHT_prompts.md",
+   "sha256": "a842e7aab48c1322f7884c67b75ded2677e3207cd8b2451983eeb7446522b3ba"
+  },
+  {
+   "path": "freeciv/run/PREFLIGHT_v2.md",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/PREFLIGHT_v2.md",
+   "sha256": "02d552467233db0156cfc54f884ca749ff2171b5e0997b9ec452513e040e7809"
+  },
+  {
+   "path": "freeciv/run/RUN2_PLAN.md",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/run/RUN2_PLAN.md",
+   "sha256": "2acd6887d05b196d5709e6e5a86760d16704059af6c20a1a7337e42c80150dde"
+  },
+  {
+   "path": "freeciv/corpus_docs/family_specs_rev27_2026-09-04.json",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/corpus_docs/family_specs_rev27_2026-09-04.json",
+   "sha256": "aa602c59317dd3156bf522c0815ad8f1271704180237fe38379f634f9a066dac"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/freeciv_world_as_run.patch",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/freeciv_world_as_run.patch",
+   "sha256": "1b2497dfb5175c76a66843cdd204ea3839c053c26c8753cc7a6f326c6ee67245"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/pyproject.toml",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/pyproject.toml",
+   "sha256": "b7bea23c155d585bca79ed96e468391331d0a1235ad790d1cbd622ef37e0e705"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/uv.lock",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/uv.lock",
+   "sha256": "220f0b4f3e19a7c60e4cc923b599ef2c72a163daa48f00c00658db16fa9e29f9"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/__init__.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/__init__.py",
+   "sha256": "c975c0566cb36cddaa726c9a3730119922d0a3ed755fdcdb5db1ce906c825cde"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/conditional/__init__.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/conditional/__init__.py",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/conditional/io.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/conditional/io.py",
+   "sha256": "bacdc6a8939c2a59139141f619befc6fc73d2d3204df17af791908220eaac1d3"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/conditional/schema.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/conditional/schema.py",
+   "sha256": "1616e68f43f0fbf06a8f234b56304c468905d3359fe5a785e86b46684c243fcf"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/__init__.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/__init__.py",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/difficulty.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/difficulty.py",
+   "sha256": "4425a7d28cfb48024e33b673aa42cf1873663ef49cd7be1d397bbfaf5afcf043"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/models.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/models.py",
+   "sha256": "cf4a9b697f90ed45c051f3acab12288e534ea24c4a65eadfdd73903b20e9be29"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/sampling.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/evaluation/sampling.py",
+   "sha256": "d890b544ed6fe52fd540c3d3be939fc0cd9de065187e86097f3a173d661d8609"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/metrics.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/metrics.py",
+   "sha256": "574faad116429a52c6b74717615ffe1727e39214a9c00c6745087362c2710c3e"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/__init__.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/__init__.py",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/io.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/io.py",
+   "sha256": "46a146b63bdf42a50212c087c0b70eb83241d41067dc987d3fdbc4d0a3889153"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/registry.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/registry.py",
+   "sha256": "a3f45d6edb4aaaa4e44c8e03196ae96e714c1939e9317d17c2cc5f462257682b"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/resolver.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/resolver.py",
+   "sha256": "0d6ec07a8123a0595ea581b45f786072d59d0488192657a69cd839ed4b868fc6"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/schema.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/schema.py",
+   "sha256": "49dc356cad36dccf9efaf477cbfbd4b0580886994a859fa4f0a4b90f9d1b0d1a"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/timeseries.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/fbsim_core/questions/timeseries.py",
+   "sha256": "fef360218a9db74e3f9ffaaf83e6e5fa173701f81b43c3e10ce91c648a865e55"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/pyproject.toml",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/pyproject.toml",
+   "sha256": "a1521b6be88597c997980da8bfc61befa2cee7d4402a4da5c4825aa79b44f972"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/tests/test_metrics.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/tests/test_metrics.py",
+   "sha256": "0f44874ad3c040eeceea6f8df86c42fdf48e4cc4467cc25c50242d6c0ca3abb6"
+  },
+  {
+   "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/tests/test_resolver_registry.py",
+   "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/tests/test_resolver_registry.py",
+   "sha256": "112264b047a72e60d9a5f0b078f2413f583d82239f6e8f3a23f4a4ab2b7d7a9a"
   }
  ]
 }
