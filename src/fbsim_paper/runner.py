@@ -16,6 +16,16 @@ def validate(data):
  for filename,h in pin['scoring_hashes'].items():
   if sha(Path(pandemic.__file__).parent/filename)!=h:raise ValueError('Benchmark scoring pin mismatch: '+filename)
  return dict(status='PASS',files_verified=len(m['files']),analysis_baseline=m['analysis_baseline'],latest_manuscript=m['latest_manuscript'],benchmark_pin=pin)
+def analysis_root(data,analysis):
+ """Assemble the Starsim analysis checkout from assets and the archive's cached calls."""
+ shutil.copytree(ASSETS/'analysis',analysis)
+ old=data/'datasets/analysis-original/results/causal';dst=analysis/'results/causal'
+ # Exact cached call files and required historical reference distributions, no launchers.
+ for rel in ['rerun_lowest','data/worlds']:
+  shutil.copytree(old/rel,dst/rel,dirs_exist_ok=True)
+ for name in ['worlds.json','worlds_hold.json','models.csv']:
+  shutil.copyfile(old/'starsim_causal'/name,dst/'starsim_causal'/name)
+ return analysis
 def reproduce(data,out):
  checks=validate(data)
  if out.exists():raise ValueError('Output must be a new directory')
@@ -23,13 +33,7 @@ def reproduce(data,out):
  for p in paper.rglob('*'):
   if p.is_file():p.chmod(p.stat().st_mode|0o200)
  before={str(p.relative_to(paper)):(sha(p),p.stat().st_mtime_ns) for p in paper.rglob('*') if p.is_file()}
- analysis=out/'analysis';shutil.copytree(ASSETS/'analysis',analysis)
- old=data/'datasets/analysis-original/results/causal';dst=analysis/'results/causal'
- # Exact cached call files and required historical reference distributions, no launchers.
- for rel in ['rerun_lowest','data/worlds']:
-  shutil.copytree(old/rel,dst/rel,dirs_exist_ok=True)
- for name in ['worlds.json','worlds_hold.json','models.csv']:
-  shutil.copyfile(old/'starsim_causal'/name,dst/'starsim_causal'/name)
+ analysis=analysis_root(data,out/'analysis')
  guard=str(ASSETS/'offline');env=dict(os.environ);env.update(PYTHONDONTWRITEBYTECODE='1',MPLCONFIGDIR=str(out/'mpl'),MPLBACKEND='Agg',PYTHONPATH=guard+os.pathsep+os.pathsep.join(sys.path))
  probe=subprocess.run([sys.executable,'-c',"import socket;socket.create_connection(('127.0.0.1',9))"],env=env,capture_output=True,text=True)
  assert probe.returncode and 'offline reproduction guard' in probe.stderr

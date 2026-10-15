@@ -37,6 +37,16 @@ def _compare(ref, paper, before):
         rows.append(row)
     return rows
 
+def commands(world,data,paper,tmp,micropolis_inputs):
+    """(env, commands) running a world's reporting scripts into the manuscript tree `paper`; scratch goes in `tmp`."""
+    if world=='micropolis':
+        # Native script writes beside its CSVs, so pass only a disposable copy.
+        inputs=tmp/'inputs';shutil.copytree(micropolis_inputs,inputs)
+        env=_env(tmp,[ASSETS/'micropolis']);env['PAPER_REPO_PATH']=str(paper)
+        return env,[[sys.executable,str(ASSETS/'micropolis/scripts/analyze_paper.py'),'--datadir',str(inputs),'--outdir',str(tmp/'figures'),'--no-extra']]
+    env=_env(tmp);env.update(FBSIM_SOURCE_ROOT=str(data/'datasets/freeciv-source/worlds/freeciv/fbsim_v3'),FBSIM_RUN='run2_paper',FBSIM_PAPER_ROOT=str(paper))
+    return env,[[sys.executable,str(ASSETS/'freeciv'/s),'--paper-root',str(paper)] for s in ['make_freeciv_tables.py','make_freeciv_difficulty_table.py','make_freeciv_family_table.py','make_freeciv_figs.py']]
+
 def run(world,data,out):
     checks=validate(data)
     required=data/'manifests/cached-worlds-20260924.json'
@@ -51,14 +61,7 @@ def run(world,data,out):
     for p in paper.rglob('*'):
         if p.is_file():p.chmod(p.stat().st_mode|0o200)
     before={str(p.relative_to(paper)):(sha(p),p.stat().st_mtime_ns) for p in paper.rglob('*') if p.is_file()}
-    if world=='micropolis':
-        # Native script writes beside its CSVs, so pass only a disposable copy.
-        inputs=out/'inputs';shutil.copytree(paper/'data/micropolis',inputs)
-        env=_env(out,[ASSETS/'micropolis']);env['PAPER_REPO_PATH']=str(paper)
-        cmds=[[sys.executable,str(ASSETS/'micropolis/scripts/analyze_paper.py'),'--datadir',str(inputs),'--outdir',str(out/'figures'),'--no-extra']]
-    else:
-        env=_env(out);env.update(FBSIM_SOURCE_ROOT=str(data/'datasets/freeciv-source/worlds/freeciv/fbsim_v3'),FBSIM_RUN='run2_paper',FBSIM_PAPER_ROOT=str(paper))
-        cmds=[[sys.executable,str(ASSETS/'freeciv'/s),'--paper-root',str(paper)] for s in ['make_freeciv_tables.py','make_freeciv_difficulty_table.py','make_freeciv_family_table.py','make_freeciv_figs.py']]
+    env,cmds=commands(world,data,paper,out,paper/'data/micropolis')
     with (out/'run.log').open('w') as log:
         for cmd in cmds:
             log.write('COMMAND '+json.dumps(cmd)+'\n');log.flush()
