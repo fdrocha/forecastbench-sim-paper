@@ -15,24 +15,21 @@ This repository is the home for the paper's analysis, including the combined-sco
 | Inputs of the manuscript build: Micropolis's gathered forecasts, the model-name list, Starsim's pre-repair scores | private data archive: `datasets/paper-inputs` while the paper changes, frozen as `datasets/paper-inputs-YYYYMMDD` for each release |
 | Raw provider responses, simulator outputs, datasets, human-subject records, credentials | private data archive, never Git |
 
-## Install and smoke test
+## Install
 
-Python 3.11+ is declared; fresh offline reproduction is verified on CPython 3.13.11 / macOS arm64. SciPy is pinned to 1.16.3 because the 1.15.3 macOS arm64 wheel no longer loads on macOS 27. The public benchmark supplies the numerical scorers. Use the exact benchmark revision below; do not install the older standalone distribution alongside its two packages.
+Python 3.11+ is declared; the tested platform is CPython 3.13 / macOS arm64, and System TeX and `pdftotext` are needed for the figures. SciPy is pinned to 1.16.3 because the 1.15.3 macOS arm64 wheel no longer loads on macOS 27. The public benchmark supplies the numerical scorers; use the exact revision below, and do not install the older standalone distribution alongside its two packages.
 
 ```sh
-git clone https://github.com/forecastingresearch/forecastbench-sim.git benchmark-source
-git -C benchmark-source checkout 9e016b76f14f98c496da513c5c8aca1c2db535cd
 uv venv --python 3.13 .venv
-PYTHON="$PWD/.venv/bin/python"
-uv run --no-project --python "$PYTHON" benchmark-source/packages/fbsim-benchmark/tools/build_wheels.py --output dist/wheels
-uv build --no-sources --wheel --python "$PYTHON" --out-dir dist/wheels .
-uv pip install --python "$PYTHON" --find-links dist/wheels --constraint requirements-observed.txt 'fbsim-core==0.1.0' 'fbsim-benchmark==0.3.0' 'forecastbench-sim-paper==0.3.0' -r requirements-test.txt
-uv pip check --python "$PYTHON"
-"$PYTHON" -m fbsim_paper smoke
-"$PYTHON" -m pytest -q tests
+B=git+https://github.com/forecastingresearch/forecastbench-sim@9e016b76f14f98c496da513c5c8aca1c2db535cd
+uv pip install --python .venv/bin/python --constraint requirements-observed.txt \
+  "fbsim-core @ $B#subdirectory=packages/fbsim-core" "fbsim-benchmark @ $B#subdirectory=packages/fbsim-benchmark" \
+  -e . -r requirements-test.txt
+source .venv/bin/activate
+fbsim-paper smoke && pytest -q tests   # optional checks; neither needs the data archive
 ```
 
-The install provides an `fbsim-paper` command (`python -m fbsim_paper` works too). These install commands require package-index access unless the reviewed wheels are already available. See [offline installation](docs/ENVIRONMENT.md) for the tested wheelhouse route. System TeX and `pdftotext` are needed for cached figures.
+This repository is installed in editable mode, so commands run its scripts as checked out. After `source .venv/bin/activate` the `fbsim-paper` command is on the path (`python -m fbsim_paper` works too). `build_paper.sh` (see below) uses its own environment, `.venv-build`, with your forecastbench-sim checkout instead of the pinned benchmark. These commands need package-index access; for the verified non-editable wheel route and the offline wheelhouse route, see [environment](docs/ENVIRONMENT.md).
 
 ## Settings
 

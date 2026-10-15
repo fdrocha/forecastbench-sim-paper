@@ -20,6 +20,6 @@ uv pip check --python "$PYTHON"
 "$PYTHON" -m pytest -q tests
 ```
 
-Build from disposable source copies. Direct uv installation from the benchmark workspace can resolve editable workspace dependencies; use these named wheels. Verification checks installed import locations, absence of user/external site-packages, dependency consistency, and benchmark scorer hashes. Wheel hashes are platform-specific, not a universal lock. README gives an index-enabled installation route for users without the reviewed caches.
+Build from disposable source copies. Direct uv installation from the benchmark workspace can resolve editable workspace dependencies; use these named wheels. Verification checks installed import locations, absence of user/external site-packages, dependency consistency, and benchmark scorer hashes. Wheel hashes are platform-specific, not a universal lock. README gives a shorter index-enabled, editable installation route for users without the reviewed caches; it installs the benchmark packages from the pinned git revision instead of named wheels.
 
 Hosted smoke CI tests the declared Python 3.11/3.13 support using the package runtime pins and compatible transitive dependencies. It deliberately does not apply the observed Python 3.13 environment constraints on Python 3.11: for example, observed contourpy 1.4.0 requires Python 3.12+. Hosted smoke is not evidence of full cached reproduction on either Linux environment. Frozen local reproduction retains its original verified constraints.
