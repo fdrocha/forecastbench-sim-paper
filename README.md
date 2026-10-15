@@ -32,18 +32,26 @@ uv pip check --python "$PYTHON"
 
 The install provides an `fbsim-paper` command (`python -m fbsim_paper` works too). These install commands require package-index access unless the reviewed wheels are already available. See [offline installation](docs/ENVIRONMENT.md) for the tested wheelhouse route. System TeX and `pdftotext` are needed for cached figures.
 
+## Settings
+
+Copy `.env.example` to `.env` (not committed) and set the paths in it. `fbsim-paper` reads `.env` from this checkout, else from the current directory, for each variable the shell has not set; command-line flags override both.
+
+| Variable | What it is | Flag |
+|---|---|---|
+| `FBSIM_DATA_ROOT` | the data archive's `data/` folder (holding `datasets/` and `manifests/`) | `--data-root` |
+
 ## Cached reproduction requires restricted external inputs
 
 **The data and manifests are not distributed here, so a public clone cannot run these routes.** To regenerate the inputs from scratch, see [production/](production/README.md). Local availability does not grant redistribution rights. No download or data-release promise is made. With authorized access to the existing versioned private data home:
 
 ```sh
-"$PYTHON" -m fbsim_paper validate --data-root "$FBSIM_DATA_ROOT"
-"$PYTHON" -m fbsim_paper reproduce --data-root "$FBSIM_DATA_ROOT" --output "$NEW_STARSIM_OUTPUT"
-"$PYTHON" -m fbsim_paper reproduce-freeciv --data-root "$FBSIM_DATA_ROOT" --output "$NEW_FREECIV_OUTPUT"
-"$PYTHON" -m fbsim_paper reproduce-micropolis --data-root "$FBSIM_DATA_ROOT" --output "$NEW_MICROPOLIS_OUTPUT"
+fbsim-paper validate
+fbsim-paper reproduce --output "$NEW_STARSIM_OUTPUT"
+fbsim-paper reproduce-freeciv --output "$NEW_FREECIV_OUTPUT"
+fbsim-paper reproduce-micropolis --output "$NEW_MICROPOLIS_OUTPUT"
 ```
 
-Each output directory must be new. Validation checks 488 frozen inputs and scorer hashes. Missing inputs fail explicitly. Routes read cached inputs and create disposable outputs; they do not rerun simulators, call models or edit the manuscript. Python network access is guarded. Archival helper scripts are not production entrypoints.
+Each command takes `--data-root` or `FBSIM_DATA_ROOT` (see Settings). Each output directory must be new. Validation checks 487 frozen inputs and scorer hashes. Missing inputs fail explicitly. Routes read cached inputs and create disposable outputs; they do not rerun simulators, call models or edit the manuscript. Python network access is guarded. Archival helper scripts are not production entrypoints.
 
 Starsim uses retained forecasts with repaired continuous truth; historical binary results remain appendix-only and excluded from the nine-cell combined score. FreeCiv consumes cached per-item/aggregate results; Micropolis consumes frozen gathered CSVs. `verification.json` distinguishes byte equality, PDF-text equality, numerical roundoff and layout differences. The known FreeCiv capability-figure annotation presence/placement mismatch remains; JSON roundoff is at most 4.22e-15 in the verified run. Do not replace frozen artifacts merely because a route succeeds.
 

@@ -48,7 +48,14 @@ def reproduce(data,out):
  checks['all_generated_comparisons']=_compare(ref,paper,before)
  (out/'verification.json').write_text(json.dumps(checks,indent=2)+'\n');return checks
 
+def load_env():
+ """Fill unset variables from .env in this checkout, else the current directory; shell and flags win."""
+ from dotenv import load_dotenv
+ for d in (Path(__file__).resolve().parents[2],Path.cwd()):
+  if (d/'.env').is_file():load_dotenv(d/'.env',override=False);return
+
 def main():
+ load_env()
  p=argparse.ArgumentParser(description=__doc__);s=p.add_subparsers(dest='command',required=True);s.add_parser('smoke')
  for name in ['validate','reproduce','reproduce-freeciv','reproduce-micropolis']:
   q=s.add_parser(name);q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
@@ -57,7 +64,8 @@ def main():
  if a.command=='smoke':
   assert pandemic.crps5([1,1,1,1,1],[1])==0;print(json.dumps(dict(status='PASS',scope='import and synthetic scoring only; no paper inputs')))
  else:
-  if a.data_root is None:p.error('Pass --data-root DIR or set FBSIM_DATA_ROOT; no default private path is assumed.')
+  if a.data_root is None:p.error('Pass --data-root DIR or set FBSIM_DATA_ROOT (in the shell or .env); no default private path is assumed.')
+  a.data_root=Path(a.data_root).expanduser()
   try:
    if a.command.startswith('reproduce-'):
     from .cached import run
