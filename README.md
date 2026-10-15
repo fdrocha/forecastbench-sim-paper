@@ -42,6 +42,7 @@ Copy `.env.example` to `.env` (not committed) and set the paths in it. `fbsim-pa
 |---|---|---|
 | `FBSIM_DATA_ROOT` | the data archive's `data/` folder (holding `datasets/` and `manifests/`) | `--data-root` |
 | `FBSIM_PAPER_ROOT` | the manuscript checkout (the folder with `main.tex`), for `build` | `--paper-root` |
+| `FBSIM_REPO_ROOT` | the forecastbench-sim checkout, for `build_paper.sh` | none |
 
 ## Working on the paper
 
@@ -59,6 +60,8 @@ fbsim-paper build micropolis starsim   # only these steps (always run in that or
    - FreeCiv: from the archived run (`freeciv-source`, run `run2_paper`), the backing files and README of `data/freeciv/`, the appendix tables, the per-forecast files, the reasoning-effort check, its cells of the shared cost, roster and validation tables, and the figures.
    - Starsim: `integrate_fixed_state.py`, from the cached calls and the fixed-state audit (`analysis-original`, `starsim-audit`). It also refits the combined score and the rank tables from all three worlds, so rerun it after changing Micropolis or FreeCiv. Then `build_metadata.py` fills Starsim's cells of the shared tables.
 4. It prints `git status` of the manuscript's `data/` and `figures/`. Review the diff there and commit both repositories.
+
+To use your forecastbench-sim checkout instead of the pinned benchmark, run `./build_paper.sh [steps]`, which takes the same arguments as `build`. It installs `fbsim-core` and `fbsim-benchmark` from `FBSIM_REPO_ROOT`, and this repository, as editable packages into `.venv-build`, then runs `fbsim-paper build`. `.venv-build` is separate from `.venv`, which keeps the pinned benchmark that `validate` and `reproduce` check. Reinstalling takes under a second when nothing changed. Use the script, or `uv pip`, rather than `uv sync` or `uv run`: those resolve the pinned benchmark packages from the package index, where they are not published.
 
 There are no hash checks and no snapshot copy, so `build` works while code and inputs change; `validate` and `reproduce` are for frozen releases. Figures get a fixed PDF date (`SOURCE_DATE_EPOCH=0` unless set), so an unchanged figure leaves no diff. A full build takes about 2.5 minutes. Hand-written and frozen files are not generated: `openrouter_ids_table.tex`, `human_pilot_table.tex`, the `*_frozen.tex` validation tables and the schematic.
 
