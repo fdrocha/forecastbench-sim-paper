@@ -1,6 +1,6 @@
 import argparse, re, pathlib, sys
 ap = argparse.ArgumentParser()
-ap.add_argument("--paper-root", type=pathlib.Path, default=pathlib.Path(__file__).resolve().parents[3])
+ap.add_argument("--paper-root", type=pathlib.Path, required=True)
 ROOT = ap.parse_args().paper_root
 files = ["sections/06_starsim.tex","sections/09_discussion.tex","appendix/C_full_results.tex","appendix/D_ablations.tex","sections/07_validation.tex","sections/03_benchmark_design.tex","sections/02_introduction.tex","sections/01_abstract.tex","data/starsim/per_item_table.tex","data/appendix_tables/starsim_models.tex","data/appendix_tables/starsim_horizon.tex","data/appendix_tables/starsim_rung_horizon.tex","data/validation_table.tex","data/validation_table_main.tex","data/validation_table_forecastbench.tex"]
 labels = set()

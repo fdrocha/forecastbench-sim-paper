@@ -16,7 +16,7 @@ SETS = [
     ('continuous', 'unconditional', '-'),
 ]
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--paper-root', type=Path, default=Path(__file__).resolve().parents[3])
+parser.add_argument('--paper-root', type=Path, required=True)
 parser.add_argument('--csv', type=Path, required=True)
 parser.add_argument('--out', type=Path, required=True)
 args = parser.parse_args()

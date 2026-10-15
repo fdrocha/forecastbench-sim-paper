@@ -8,7 +8,7 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--from-dir', type=Path, required=True)
-parser.add_argument('--paper-root', type=Path, default=Path(__file__).resolve().parents[3])
+parser.add_argument('--paper-root', type=Path, required=True)
 a = parser.parse_args()
 outputs = {
     'starsim_excess_long.csv': 'data/starsim/starsim_excess_long.csv',

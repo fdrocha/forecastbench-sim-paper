@@ -1,8 +1,8 @@
 # ForecastBench-Sim paper analysis
 
-Cached analysis, aggregation, uncertainty summaries and plotting for ForecastBench-Sim. The scientific inputs and reporting code reproduce the **f214afe3 frozen analysis baseline**, not the latest manuscript. See [manuscript mapping](docs/MANUSCRIPT_STATUS.md).
+Cached analysis, aggregation, uncertainty summaries and plotting for ForecastBench-Sim. The cached routes check the scientific inputs and outputs of the **f214afe3 frozen analysis baseline**; the reporting code itself follows the current manuscript. See [manuscript mapping](docs/MANUSCRIPT_STATUS.md).
 
-This repository is the home for the paper's analysis. Changes to paper analysis land here as pull requests. The cached routes keep reproducing the f214afe3 baseline until new inputs are frozen into the data archive.
+This repository is the home for the paper's analysis, including the combined-score, rank-table and Starsim scripts that used to live in the manuscript repository. Changes to paper analysis land here as pull requests. The cached routes check the f214afe3 baseline until new inputs are frozen into the data archive.
 
 ## What goes where
 
@@ -54,6 +54,8 @@ fbsim-paper reproduce-micropolis --output "$NEW_MICROPOLIS_OUTPUT"
 Each command takes `--data-root` or `FBSIM_DATA_ROOT` (see Settings). Each output directory must be new. Validation checks 487 frozen inputs and scorer hashes. Missing inputs fail explicitly. Routes read cached inputs and create disposable outputs; they do not rerun simulators, call models or edit the manuscript. Python network access is guarded. Archival helper scripts are not production entrypoints.
 
 Starsim uses retained forecasts with repaired continuous truth; historical binary results remain appendix-only and excluded from the nine-cell combined score. FreeCiv consumes cached per-item/aggregate results; Micropolis consumes frozen gathered CSVs. `verification.json` distinguishes byte equality, PDF-text equality, numerical roundoff and layout differences. The known FreeCiv capability-figure annotation presence/placement mismatch remains; JSON roundoff is at most 4.22e-15 in the verified run. Do not replace frozen artifacts merely because a route succeeds.
+
+**`reproduce` is expected to fail until the next paper release.** The scripts here now follow the manuscript (they match it at 2e57585, including its sign correction, rho(ECI, -loss)), while the cached routes still compare against the f214afe3 release. `reproduce` stops at `figures/fig_starsim_unconditional.png`, whose annotation changed; every data file it checks before that still matches f214afe3, and its Starsim and combined figures match the manuscript at 2e57585. `reproduce-freeciv` and `reproduce-micropolis` never fail on differences, but their comparisons drift the same way as their scripts change. All three are re-baselined when the next paper version is released: a new data-archive version with its manifests and manuscript snapshot, and this repository pointed at it. Until then, check out commit `7a00369` (the SciPy pin, the last commit where it passes) to rerun the passing f214afe3 verification.
 
 See [limitations](docs/MIGRATION_GAPS.md), [boundaries](docs/BOUNDARIES.md), [attribution](docs/ATTRIBUTION.md), and the historical [results map](docs/results-map.yaml). Original histories and private data remain preserved separately.
 

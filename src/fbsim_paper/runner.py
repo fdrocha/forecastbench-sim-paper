@@ -22,7 +22,6 @@ def reproduce(data,out):
  out.mkdir(parents=True);start=time.monotonic();paper=out/'paper';ref=data/'datasets/paper-f214afe3';shutil.copytree(ref,paper)
  for p in paper.rglob('*'):
   if p.is_file():p.chmod(p.stat().st_mode|0o200)
- shutil.copytree(ASSETS/'paper',paper,dirs_exist_ok=True)
  before={str(p.relative_to(paper)):(sha(p),p.stat().st_mtime_ns) for p in paper.rglob('*') if p.is_file()}
  analysis=out/'analysis';shutil.copytree(ASSETS/'analysis',analysis)
  old=data/'datasets/analysis-original/results/causal';dst=analysis/'results/causal'
@@ -34,7 +33,7 @@ def reproduce(data,out):
  guard=str(ASSETS/'offline');env=dict(os.environ);env.update(PYTHONDONTWRITEBYTECODE='1',MPLCONFIGDIR=str(out/'mpl'),MPLBACKEND='Agg',PYTHONPATH=guard+os.pathsep+os.pathsep.join(sys.path))
  probe=subprocess.run([sys.executable,'-c',"import socket;socket.create_connection(('127.0.0.1',9))"],env=env,capture_output=True,text=True)
  assert probe.returncode and 'offline reproduction guard' in probe.stderr
- cmd=[sys.executable,str(paper/'data/starsim/scripts/integrate_fixed_state.py'),'--paper-root',str(paper),'--analysis-root',str(analysis),'--audit-root',str(data/'datasets/starsim-audit/production_v1'),'--out',str(out/'generated')]
+ cmd=[sys.executable,str(ASSETS/'starsim/integrate_fixed_state.py'),'--paper-root',str(paper),'--analysis-root',str(analysis),'--audit-root',str(data/'datasets/starsim-audit/production_v1'),'--out',str(out/'generated')]
  with (out/'reproduction.log').open('w') as f:subprocess.run(cmd,env=env,stdout=f,stderr=subprocess.STDOUT,check=True)
  matches=[]
  for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','data/starsim/integration_numbers.json','data/validation_table_main.tex','data/validation_table_forecastbench.tex','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']:

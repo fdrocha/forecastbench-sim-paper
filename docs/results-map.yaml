@@ -92,7 +92,7 @@
           "sha256": "306403a830be2587d721ab34d278c5d83d3c9fa554d25ec1a19782194645053d"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -117,7 +117,7 @@
           "sha256": "f6e8954ed8e1ff60f75c3afe1be999f973be8a048b3dacabd3379e8093370541"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -407,7 +407,7 @@
           "sha256": "f807c89b991766a4430c63692141ace7e30ad2c595c61f2ddbd03db8ed3f097a"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -431,7 +431,7 @@
           "sha256": "b81187f9a532ae7f3c2322400f21afeae1654b9bf517c5d845a8a7bb176d18ef"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -455,7 +455,7 @@
           "sha256": "0b5a4be39856b401f6d7d731e77f09062a1e78bf682a946f357b39f693faa5ee"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -479,7 +479,7 @@
           "sha256": "75e90462d9f4c6949fd22471e78724b1b3ae9470f48e783c0a977041dd93f686"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -504,7 +504,7 @@
           "sha256": "4263d927b603f6afc933531fff48422a5bd32fbe30c0c1a9a16d9c5f43a1010e"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -529,7 +529,7 @@
           "sha256": "ea11947e922110d2b8f1149dd243016f5c706ba9f244593bd42e68671d9e71a6"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -553,7 +553,7 @@
           "sha256": "568268c82382f10d85faaa6fdd1cf63eca9792b935d8fb8b225330c9eebd6c73"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -796,7 +796,7 @@
           "sha256": "5afb5384e49c14f2806434270b1a60b4a8a254104de183143e552ea06be50ab2"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -820,7 +820,7 @@
           "sha256": "b3336500dcc6f848362eba59a5d0786a2658cb78c5339e65dc0dea797d5b2e27"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -844,7 +844,7 @@
           "sha256": "a1027d274ab28e0e0828644db7994a58492d98e88943d565959a0062d5fa5cca"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -868,7 +868,7 @@
           "sha256": "2b4d842e403733d08e989eef4bf0ac83bf5a5b1a87582024eb515f030678b6e0"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -892,7 +892,7 @@
           "sha256": "3171088a3323eb660afab951fa68085a4e70a756e412cf049e8daf12e1a8410d"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -917,7 +917,7 @@
           "sha256": "0fcf7f438fdcbc42db692b5b6a48ca0e56b6e0f946cb1f4e55b0608831f70534"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
@@ -941,7 +941,7 @@
           "sha256": "4b2301bda31c468b4a2341e5ff1a7773a00464963ec071ef832252f1acc4dbd8"
         }
       ],
-      "script": "assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+      "script": "assets/starsim/integrate_fixed_state.py",
       "workflow": "cached-reproduction",
       "config": "configs/paper-f214afe3.json",
       "data_manifest": "manifests/homes-inputs-20260924.json",
