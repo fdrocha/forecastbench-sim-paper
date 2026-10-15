@@ -15,7 +15,7 @@ This repository is the home for the paper's analysis. Changes to paper analysis 
 
 ## Install and smoke test
 
-Python 3.11+ is declared; fresh offline reproduction is verified on CPython 3.13.11 / macOS arm64. The public benchmark supplies the numerical scorers. Use the exact benchmark revision below; do not install the older standalone distribution alongside its two packages.
+Python 3.11+ is declared; fresh offline reproduction is verified on CPython 3.13.11 / macOS arm64. SciPy is pinned to 1.16.3 because the 1.15.3 macOS arm64 wheel no longer loads on macOS 27. The public benchmark supplies the numerical scorers. Use the exact benchmark revision below; do not install the older standalone distribution alongside its two packages.
 
 ```sh
 git clone https://github.com/forecastingresearch/forecastbench-sim.git benchmark-source
@@ -30,7 +30,7 @@ uv pip check --python "$PYTHON"
 "$PYTHON" -m pytest -q tests
 ```
 
-These install commands require package-index access unless the reviewed wheels are already available. See [offline installation](docs/ENVIRONMENT.md) for the tested wheelhouse route. System TeX and `pdftotext` are needed for cached figures.
+The install provides an `fbsim-paper` command (`python -m fbsim_paper` works too). These install commands require package-index access unless the reviewed wheels are already available. See [offline installation](docs/ENVIRONMENT.md) for the tested wheelhouse route. System TeX and `pdftotext` are needed for cached figures.
 
 ## Cached reproduction requires restricted external inputs
 

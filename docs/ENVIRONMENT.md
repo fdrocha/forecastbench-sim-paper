@@ -2,6 +2,8 @@
 
 Verified platform: CPython 3.13.11 / macOS arm64, using uv and isolated non-editable wheels. System TeX and pdftotext remain prerequisites. This is not a hermetic OS image or verification of every platform.
 
+SciPy 1.16.3 replaced 1.15.3 on October 15, 2026: on macOS 27 the 1.15.3 arm64 wheel fails to load scipy.sparse.linalg (dyld rejects the zero-fill section of its _spropack extension), which stops every cached route. With 1.16.3 all three cached routes pass with the same comparisons as before.
+
 The existing reviewed scientific wheelhouse contains the exact hashes in requirements-verified-macos-arm64-py313.txt. It is not distributed here. Canonical core also needs litellm, python-dotenv and their transitive dependencies: these must already be in the local uv cache for the offline route. The scientific wheelhouse alone is insufficient. Offline mode fails rather than downloading missing packages.
 
 Given an existing interpreter, the reviewed wheelhouse, the cached core dependencies and benchmark source checked out at 9e016b76f14f98c496da513c5c8aca1c2db535cd:
