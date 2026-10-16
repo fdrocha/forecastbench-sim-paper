@@ -39,14 +39,16 @@ def reproduce(data,out):
  assert probe.returncode and 'offline reproduction guard' in probe.stderr
  cmd=[sys.executable,str(ASSETS/'starsim/integrate_fixed_state.py'),'--paper-root',str(paper),'--analysis-root',str(analysis),'--audit-root',str(data/'datasets/starsim-audit/production_v1'),'--out',str(out/'generated')]
  with (out/'reproduction.log').open('w') as f:subprocess.run(cmd,env=env,stdout=f,stderr=subprocess.STDOUT,check=True)
- matches=[]
- for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','data/starsim/integration_numbers.json','data/validation_table_main.tex','data/validation_table_forecastbench.tex','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']:
-  assert sha(paper/rel)==sha(ref/rel),rel;matches.append(dict(path=rel,sha256=sha(paper/rel)))
- for name in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon','fig_combined_score']:
-  text=lambda p:subprocess.check_output(['pdftotext','-layout',str(p),'-'])
-  assert text(paper/'figures'/(name+'.pdf'))==text(ref/'figures'/(name+'.pdf')),name
- result=json.loads((paper/'data/combined_score.json').read_text());assert len(result['single'])==9 and result['rho']==0.8626086956521738
- checks.update(score_and_png_byte_matches=matches,figure_pdf_text_matches=4,nine_cell_rho=result['rho'],elapsed_seconds=time.monotonic()-start,network_guard_probe='PASS',simulations=0,model_calls=0,scope='Cached Starsim/combined reproduction; frozen Micropolis/FreeCiv inputs, not full replay regeneration')
+ # Run every check, so one mismatch does not hide the others; main fails afterwards if any did.
+ failures=[]
+ def check(name,ok):
+  if not ok:failures.append(name)
+  return ok
+ byte=[dict(path=rel,sha256=sha(paper/rel),byte_equal=check(rel,sha(paper/rel)==sha(ref/rel))) for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','data/starsim/integration_numbers.json','data/validation_table_main.tex','data/validation_table_forecastbench.tex','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']]
+ text=lambda p:subprocess.check_output(['pdftotext','-layout',str(p),'-'])
+ pdf=[dict(path=rel,pdf_text_equal=check(rel,text(paper/rel)==text(ref/rel))) for rel in [f'figures/{n}.pdf' for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon','fig_combined_score']]]
+ result=json.loads((paper/'data/combined_score.json').read_text());check('nine-cell rho',len(result['single'])==9 and result['rho']==0.8626086956521738)
+ checks.update(byte_checks=byte,pdf_text_checks=pdf,nine_cell_rho=result['rho'],checks_run=len(byte)+len(pdf)+1,failures=failures,elapsed_seconds=time.monotonic()-start,network_guard_probe='PASS',simulations=0,model_calls=0,scope='Cached Starsim/combined reproduction; frozen Micropolis/FreeCiv inputs, not full replay regeneration')
  from .cached import _compare
  checks['all_generated_comparisons']=_compare(ref,paper,before)
  (out/'verification.json').write_text(json.dumps(checks,indent=2)+'\n');return checks
@@ -88,3 +90,4 @@ def main():
    else:result=validate(Path(a.data_root).resolve()) if a.command=='validate' else reproduce(Path(a.data_root).resolve(),a.output.resolve())
   except (ValueError,FileNotFoundError) as e:p.error(str(e))
   print(json.dumps(result,indent=2))
+  if result.get('failures'):sys.exit(f"{len(result['failures'])} of {result['checks_run']} checks failed: "+', '.join(result['failures']))
