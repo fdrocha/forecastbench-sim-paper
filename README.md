@@ -17,16 +17,12 @@ This repository is the home for the paper's analysis, including the combined-sco
 
 ## Install
 
-Python 3.11+ is declared; the tested platform is CPython 3.13 / macOS arm64, and System TeX and `pdftotext` are needed for the figures. SciPy is pinned to 1.16.3 because the 1.15.3 macOS arm64 wheel no longer loads on macOS 27. The public benchmark supplies the numerical scorers; use the exact revision below, and do not install the older standalone distribution alongside its two packages.
+Python 3.11+ is declared; the tested platform is CPython 3.13 / macOS arm64, and System TeX and `pdftotext` are needed for the figures. SciPy is pinned to 1.16.3 because the 1.15.3 macOS arm64 wheel no longer loads on macOS 27. The public benchmark supplies the numerical scorers; `install.sh` installs it at a pinned revision. Do not install the older standalone distribution alongside its two packages.
 
 ```sh
-uv venv --python 3.13 .venv
-B=git+https://github.com/forecastingresearch/forecastbench-sim@9e016b76f14f98c496da513c5c8aca1c2db535cd
-uv pip install --python .venv/bin/python --constraint requirements-observed.txt \
-  "fbsim-core @ $B#subdirectory=packages/fbsim-core" "fbsim-benchmark @ $B#subdirectory=packages/fbsim-benchmark" \
-  -e . -r requirements-test.txt
+./install.sh      # creates .venv (or updates it) and runs fbsim-paper smoke
 source .venv/bin/activate
-fbsim-paper smoke && pytest -q tests   # optional checks; neither needs the data archive
+pytest -q tests   # optional; needs no data archive
 ```
 
 This repository is installed in editable mode, so commands run its scripts as checked out. After `source .venv/bin/activate` the `fbsim-paper` command is on the path (`python -m fbsim_paper` works too). `build_paper.sh` (see below) uses its own environment, `.venv-build`, with your forecastbench-sim checkout instead of the pinned benchmark. These commands need package-index access; for the verified non-editable wheel route and the offline wheelhouse route, see [environment](docs/ENVIRONMENT.md).
