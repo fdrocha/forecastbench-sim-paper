@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the FreeCiv question-family tables for appendix A.
 
-    python data/freeciv/scripts/make_freeciv_family_table.py
+    python src/fbsim_paper/assets/freeciv/make_freeciv_family_table.py
 
 Outputs (in data/, where the appendix \\inputs them; the JSON in data/freeciv/):
   freeciv_binary_families.tex      family id, resolution rule, items in bank / tails / mirrors / natcond

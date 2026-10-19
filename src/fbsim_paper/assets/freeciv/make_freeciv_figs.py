@@ -1,6 +1,6 @@
 """FreeCiv figures for the ForecastBench-Sim paper.
 
-    python data/freeciv/scripts/make_freeciv_figs.py [--png]
+    python src/fbsim_paper/assets/freeciv/make_freeciv_figs.py [--png]
 
 
 Sources (read-only):

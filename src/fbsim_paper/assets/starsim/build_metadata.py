@@ -95,7 +95,7 @@ for i, key in enumerate(SETS):
     assert {int(r['n_items_total']) for r in rs} == {8}
     cells[3:] = [f'{calls:.0f}', f'{cost:.2f}', f'{100 * cost / 8:.1f}']
     costs[start + i] = table_row(cells)
-costs[0] = '% Starsim rows: data/starsim/scripts/build_metadata.py; other worlds retained from the existing table.'
+costs[0] = '% Starsim rows: forecastbench-sim-paper/src/fbsim_paper/assets/starsim/build_metadata.py; other worlds retained from the existing table.'
 (args.out / 'cost_per_item.tex').write_text('\n'.join(costs) + '\n')
 result = dict(calls=sum(x['calls'] for x in summary.values()),
               cost_usd=sum(x['cost_usd'] for x in summary.values()),

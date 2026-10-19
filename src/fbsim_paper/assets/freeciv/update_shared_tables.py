@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Edit the FreeCiv cells of the tables that three worlds share, in place.
 
-    python data/freeciv/scripts/update_shared_tables.py [--final] [--check]
+    python src/fbsim_paper/assets/freeciv/update_shared_tables.py [--final] [--check]
 
 Touches, FreeCiv cells only, leaving every other cell as it is:
   data/hosting_cost_table.tex            per model: FreeCiv host, calls, cost; the Total row's FreeCiv cells
@@ -336,7 +336,7 @@ def main():
     cap = load_capability()
     both = cap.dropna()
     rng = np.random.default_rng(SEED)
-    out = dict(generated=str(date.today()), script="data/freeciv/scripts/update_shared_tables.py", seed=SEED, n_boot=N_BOOT,
+    out = dict(generated=str(date.today()), script="forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/update_shared_tables.py", seed=SEED, n_boot=N_BOOT,
                final=FINAL, sources={"wide": rel(WIDE), "score_items": rel(SCORE_ITEMS),
                                      "results_md": rel(RESULTS_MD), "models_file": rel(MODELS_FILE), "run": RUN},
                sign_convention="rho between the capability score and (-1 x score); positive = more capable models score better",
