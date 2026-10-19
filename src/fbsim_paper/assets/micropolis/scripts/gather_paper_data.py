@@ -33,9 +33,7 @@ actually computed at, not a per-model mean:
   config changed and which variant it is compared against.
 - knowledge_answers.csv and knowledge_runs.csv: the knowledge test, one row per
   (model, statement) with the statement's topic, difficulty, truth and the
-  model's parsed answer, and per model what its calls cost. Beside them the
-  prompts as sent: knowledge_prompt_preamble.txt and the numbered statement
-  list of each half, knowledge_prompt_1.txt and knowledge_prompt_2.txt.
+  model's parsed answer, and per model what its calls cost.
 - continuous_replays.tar.gz: the ground-truth file of each of the continuous
   config's snapshots, as extract_ground_truth.py wrote it, in one archive.
 - gpt5_check_forecasts.csv: the one-question-per-prompt rerun of GPT-5 mini in
@@ -372,10 +370,6 @@ KNOWLEDGE_COLUMNS = [
     "answer",
     "correct",
 ]
-# The prompts themselves, as sent: the preamble every prompt opens with and the
-# numbered statement list of each half, so the article can reproduce them.
-KNOWLEDGE_PREAMBLE_NAME = "knowledge_prompt_preamble.txt"
-KNOWLEDGE_PROMPT_NAME = "knowledge_prompt_{half}.txt"
 KNOWLEDGE_RUNS_CSV_NAME = "knowledge_runs.csv"
 
 # The replays behind every continuous score: one ground-truth file per
@@ -914,22 +908,6 @@ def variants_rows(
     return forecasts, runs, settings
 
 
-def knowledge_prompt_files(out: Path) -> list[Path]:
-    """Write the preamble and each half's numbered statements to `out`."""
-    from micropolis_world.knowledge_eval.runner import PREAMBLE_PATH, build_prompts
-
-    out.mkdir(parents=True, exist_ok=True)
-    preamble = PREAMBLE_PATH.read_text(encoding="utf-8")
-    written = [out / KNOWLEDGE_PREAMBLE_NAME]
-    written[0].write_text(preamble, encoding="utf-8")
-    for prompt in build_prompts():
-        assert prompt.text.startswith(preamble)
-        path = out / KNOWLEDGE_PROMPT_NAME.format(half=prompt.index + 1)
-        path.write_text(prompt.text[len(preamble) :], encoding="utf-8")
-        written.append(path)
-    return written
-
-
 def knowledge_rows(cfg: Config) -> tuple[list[dict], list[dict]]:
     """The knowledge test: one row per (model, statement), and per-model costs.
 
@@ -1208,8 +1186,6 @@ def main() -> None:
     ]:
         print(f"Wrote {write_csv(out / name, columns, rows)}")
 
-    for path in knowledge_prompt_files(out):
-        print(f"Wrote {path}")
     print(f"Wrote {write_replays_archive(continuous_cfg, out / REPLAYS_ARCHIVE_NAME)}")
 
     # Verbatim, header and blank cells included: analyze_paper.py reads it

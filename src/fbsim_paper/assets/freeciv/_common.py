@@ -8,7 +8,7 @@ Two roots:
     CSVs and the JSON side files that record every number).  Nothing else in the paper is touched,
     and no cell owned by another world is written: Micropolis tables, figures and macros come from
     Fabio's analyze_paper.py, StarSim tables and figures from assets/starsim/.  The shared tables
-    (hosting_cost_table, cost_per_item, roster_table, validation_table*) are edited in place, FreeCiv
+    (roster_table, validation_table*) are edited in place, FreeCiv
     cells only, by update_shared_tables.py.
 
     python worlds/freeciv/fbsim_v3/paper/<script>.py --paper-root /path/to/paper   (or export FBSIM_PAPER_ROOT)

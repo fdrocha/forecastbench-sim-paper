@@ -1,4 +1,4 @@
-"""Update only Starsim metadata in existing paper tables, preserving other worlds' columns.
+"""Update the Starsim reasoning-token column of the paper's roster table, preserving the other columns.
 
 Read each of the seven source sets once (pooled over horizons, not pooled over rungs).
 Costs cover recorded successful scored calls, not total provider billing or failed attempts.
@@ -68,35 +68,6 @@ for i, line in enumerate(roster):
 assert set(name_to_model.values()) == set(models)
 (args.out / 'roster_table.tex').write_text('\n'.join(roster) + '\n')
 
-hosting = read_rows(args.paper_root / 'data/hosting_cost_table.tex')
-seen = set()
-for i, line in enumerate(hosting):
-    if '&' not in line or not line.endswith(r'\\'):
-        continue
-    cells = cells_of(line)
-    if cells[0] in name_to_model:
-        model = name_to_model[cells[0]]; seen.add(model)
-        cells[-2:] = [f"{summary[model]['calls']:,}", f"{summary[model]['cost_usd']:.2f}"]
-        hosting[i] = table_row(cells)
-    elif cells[0] == 'Total':
-        cells[-2:] = [f"{sum(x['calls'] for x in summary.values()):,}", f"{sum(x['cost_usd'] for x in summary.values()):.2f}"]
-        hosting[i] = table_row(cells)
-assert seen == set(models)
-(args.out / 'hosting_cost_table.tex').write_text('\n'.join(hosting) + '\n')
-
-costs = read_rows(args.paper_root / 'data/appendix_tables/cost_per_item.tex')
-start = next(i for i, line in enumerate(costs) if line.startswith('Starsim &'))
-assert all(costs[start + i].endswith(r'\\') for i in range(len(SETS)))
-for i, key in enumerate(SETS):
-    cells = cells_of(costs[start + i])
-    rs = [sets[key] for sets in models.values()]
-    calls = sum(int(r['n_calls']) for r in rs) / len(models)
-    cost = sum(float(r['cost_usd']) for r in rs) / len(models)
-    assert {int(r['n_items_total']) for r in rs} == {8}
-    cells[3:] = [f'{calls:.0f}', f'{cost:.2f}', f'{100 * cost / 8:.1f}']
-    costs[start + i] = table_row(cells)
-costs[0] = '% Starsim rows: forecastbench-sim-paper/src/fbsim_paper/assets/starsim/build_metadata.py; other worlds retained from the existing table.'
-(args.out / 'cost_per_item.tex').write_text('\n'.join(costs) + '\n')
 result = dict(calls=sum(x['calls'] for x in summary.values()),
               cost_usd=sum(x['cost_usd'] for x in summary.values()),
               zero_reasoning_models=sum(x['reasoning_tokens_mean'] == 0 for x in summary.values()),

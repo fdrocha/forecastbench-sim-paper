@@ -4,23 +4,19 @@
     python src/fbsim_paper/assets/freeciv/update_shared_tables.py [--final] [--check]
 
 Touches, FreeCiv cells only, leaving every other cell as it is:
-  data/hosting_cost_table.tex            per model: FreeCiv host, calls, cost; the Total row's FreeCiv cells
-  data/appendix_tables/cost_per_item.tex the FreeCiv block (items, calls per model, cost per model, cents per item)
   data/roster_table.tex                  the FreeCiv reasoning-setting column
   data/validation_table.tex              the four FreeCiv rows (rho vs ECI, CI over models, p, CI over the 8 games)
   data/validation_table_forecastbench.tex the same rows against ForecastBench overall
   data/validation_table_main.tex         the four FreeCiv rows with the eight-game interval as the one CI
 and writes data/freeciv/freeciv_validation_stats.json with every statistic and its method.
 
-Fabio's analyze_paper.py and Nick's build_metadata.py edit their own cells of the same files the same
-way, so the three generators compose in any order.  Row and column positions are located by label,
-never by index alone, and the script refuses to write if a table's shape is not what it expects.
+Row and column positions are located by label, never by index alone, and the script refuses to write if a
+table's shape is not what it expects.
 
 --final drops the "(provisional)" qualifier from the FreeCiv row label and the comment lines (for the
 rerun at 50 questions per prompt).  --check recomputes and reports differences without writing.
 
-Sources (data/freeciv/): freeciv_results_wide.csv (headline scores, calls, cost), freeciv_results_table.md
-(calls and cost per model as the run log printed them), models_v1.csv (reasoning setting, provider pin),
+Sources (data/freeciv/): freeciv_results_wide.csv (headline scores, calls, cost), models_v1.csv (reasoning setting),
 score_items.csv.gz (per-item rows for the cluster bootstrap over the eight anchor games), model_scores.csv.
 The FreeCiv statistics reproduce the retired data/compute_validation_stats.py (same seed, same resample
 count, same bootstrap order).
@@ -34,7 +30,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-from _common import (DATA, MODELS_FILE, N_BOOT, RUN, PAPER_DATA, REPO, RESULTS_MD, SCORE_ITEMS, SEED, TABLES, WIDE,
+from _common import (DATA, MODELS_FILE, N_BOOT, RUN, PAPER_DATA, REPO, SCORE_ITEMS, SEED, WIDE,
                      display_name, load_capability, load_items, load_wide, tex, rel)
 
 FINAL = "--final" in sys.argv[1:]
@@ -48,8 +44,6 @@ FREECIV_SETS = [
     ("Excess Brier, mid-range", "bank_all_excess_brier", "bank", "excess_brier"),
 ]
 WORLD_LABEL = "FreeCiv" if FINAL else "\\shortstack[l]{FreeCiv\\\\(provisional)}"
-FC_SETS_COST = [("Mid-range set", 750), ("Tail set", 300), ("Mirror set", 50), ("Extra value questions (seed conditionals)", 124),
-                ("Continuous set", 300), ("Natural conditionals, turn 2", 400), ("No-news control", 99)]
 
 
 def read_lines(path):
@@ -203,14 +197,10 @@ def update_validation(rows):
 
 
 def freeciv_run_records():
-    """Per model: display name, host pin, reasoning setting, calls, cost, from models_v1.csv and the results table."""
+    """Per model: display name and reasoning setting, from models_v1.csv."""
     fc = pd.read_csv(MODELS_FILE)
     assert len(fc) == 24, len(fc)
     fc["dname"] = fc["name"].map(display_name)
-    if "provider" not in fc.columns:      # run 2: Micropolis-registry endpoint slugs
-        HOST = {"anthropic": "Anthropic", "openai": "OpenAI", "openai/default": "OpenAI", "google-ai-studio": "Google AI Studio",
-                "alibaba": "Alibaba", "deepinfra": "DeepInfra", "novita": "Novita", "streamlake": "StreamLake", "deepseek": "DeepSeek"}
-        fc["provider"] = [HOST.get(e, e) + (f" ({q})" if isinstance(q, str) and q else "") for e, q in zip(fc["endpoint"], fc.get("quantizations", [""] * len(fc)))]
 
     def setting(row):
         mode = row["reasoning_mode"]
@@ -223,45 +213,7 @@ def freeciv_run_records():
         raise ValueError(mode)
 
     fc["setting"] = fc.apply(setting, axis=1)
-    fc["host"] = (fc["provider"].fillna("").astype(str).str.replace("|", " / ", regex=False)
-                  .str.replace("Google AI Studio / Google", "Google AI Studio"))
-    calls, cost = {}, {}
-    for line in RESULTS_MD.read_text().splitlines():
-        if not line.startswith("|"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) > 3 and "/" in cells[2] and cells[2] in set(fc.openrouter_id):
-            calls[cells[2]] = int(cells[-2])
-            cost[cells[2]] = float(cells[-1])
-    assert len(calls) == 24, len(calls)
-    fc["calls"] = fc.openrouter_id.map(calls)
-    fc["cost"] = fc.openrouter_id.map(cost)
     return fc.set_index("dname")
-
-
-def update_hosting(fc):
-    path = PAPER_DATA / "hosting_cost_table.tex"
-    old = path.read_text()
-    lines = read_lines(path)
-    hdr = next(l for l in lines if l.startswith("Model &"))
-    hcells = cells_of(hdr)
-    assert hcells[1] == "FreeCiv host" and hcells[2] == "Calls" and hcells[3].startswith("Cost"), hcells
-    seen = 0
-    for i, l in enumerate(lines):
-        if not l.rstrip().endswith("\\\\") or l.startswith("Model &") or "&" not in l:
-            continue
-        c = cells_of(l)
-        nm = c[0].replace("\\_", "_")
-        if nm in fc.index:
-            r = fc.loc[nm]
-            c[1], c[2], c[3] = tex(r["host"]), f"{int(r['calls']):,}", f"{r['cost']:.2f}"
-            lines[i] = join_cells(c)
-            seen += 1
-        elif c[0] == "Total":
-            c[2], c[3] = f"{int(fc['calls'].sum()):,}", f"{fc['cost'].sum():.2f}"
-            lines[i] = join_cells(c)
-    assert seen == 24, seen
-    write_lines(path, lines, old)
 
 
 def update_roster(fc):
@@ -284,61 +236,18 @@ def update_roster(fc):
     write_lines(path, lines, old)
 
 
-RUN2_ROWS = [("Mid-range set", 750, "bank"), ("Tail set", 300, "tails"), ("Mirror set", 50, "mirrors"), ("Continuous set", 300, "continuous"),
-             ("Natural conditionals, turn 1 (one question per prompt)", 355, "t1nc"), ("Natural conditionals, turn 2", 400, "t2"), ("No-news control", 99, "nonews")]
-
-
-def update_cost_per_item(fc, w):
-    """The FreeCiv block of cost_per_item.tex.
-
-    Run 1 (no per-set cost columns): every row is the run's mean cost per call times the set's calls, the two estimated
-    cells in dark yellow.  Run 2 (cost_bank_usd etc. present): exact per-set costs; a batched call's cost is split pro rata
-    over the questions it asked, so a set's cost is its share of the prompts that carried its questions, and "Calls/model"
-    for a batched set is the number of prompts that carried at least one of its questions.  The natural-conditional rows
-    of the 22 models that reuse run 1 carry run 1's costs (results_table_v2.py --natcond-cost-from)."""
-    path = TABLES / "cost_per_item.tex"
-    old = path.read_text()
-    lines = read_lines(path)
-    start = next(i for i, l in enumerate(lines) if l.startswith("FreeCiv &"))
-    end = start
-    while not lines[end].startswith("\\midrule") and not lines[end].startswith("\\bottomrule"):
-        end += 1
-    n_models = len(w)
-    total_calls, total_cost = int(w["total_calls"].sum()), float(w["total_cost_usd"].sum())
-    new = []
-    if "cost_bank_usd" in w.columns:
-        for k, (lab, n, key) in enumerate(RUN2_ROWS):
-            ccol = f"cost_{key}_usd"
-            cpm = float(w[ccol].sum()) / n_models
-            calls = int(round(w[f"calls_{key}"].sum() / n_models))
-            new.append(join_cells(["FreeCiv" if k == 0 else "", lab, f"{n:,}", f"{calls:,}", f"{cpm:.2f}", f"{100 * cpm / n:.1f}"]))
-        items = sum(n for _, n, _ in RUN2_ROWS)
-        new.append(join_cells(["", "\\emph{all sets}", f"{items:,}", f"{int(round(total_calls / n_models)):,}", f"{total_cost / n_models:.2f}", f"{100 * total_cost / n_models / items:.1f}"]))
-    else:
-        per_call = total_cost / total_calls
-        for k, (lab, n) in enumerate(FC_SETS_COST):
-            cpm = n * per_call
-            new.append(join_cells(["FreeCiv" if k == 0 else "", lab, f"{n:,}", f"{n:,}", f"\\yellow{{{cpm:.2f}}}", f"\\yellow{{{100 * per_call:.1f}}}"]))
-        design = sum(n for _, n in FC_SETS_COST)
-        new.append(join_cells(["", "\\emph{all sets}", f"{design:,}", f"{design:,}", f"{total_cost / n_models:.2f}", f"{100 * per_call:.1f}"]))
-    lines[start:end] = new
-    write_lines(path, lines, old)
-
-
 def main():
     rows = validation_rows()
     fc = freeciv_run_records()
     w = load_wide()
     update_validation(rows)
-    update_hosting(fc)
     update_roster(fc)
-    update_cost_per_item(fc, w)
     cap = load_capability()
     both = cap.dropna()
     rng = np.random.default_rng(SEED)
     out = dict(generated=str(date.today()), script="forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/update_shared_tables.py", seed=SEED, n_boot=N_BOOT,
                final=FINAL, sources={"wide": rel(WIDE), "score_items": rel(SCORE_ITEMS),
-                                     "results_md": rel(RESULTS_MD), "models_file": rel(MODELS_FILE), "run": RUN},
+                                     "models_file": rel(MODELS_FILE), "run": RUN},
                sign_convention="rho between the capability score and (-1 x score); positive = more capable models score better",
                model_bootstrap=f"percentile bootstrap over the (capability, score) model pairs, {N_BOOT:,} resamples, "
                                f"numpy default_rng({SEED}) re-seeded per row and axis",
@@ -347,7 +256,7 @@ def main():
                eci_vs_fb_spearman=spearman_stats(both.eci.values, both.fb.values, rng),
                rows=rows,
                run=dict(models=24, total_calls=int(w["total_calls"].sum()), total_cost_usd=float(w["total_cost_usd"].sum()),
-                        per_model={n: dict(host=r["host"], setting=r["setting"], calls=int(r["calls"]), cost=float(r["cost"]))
+                        per_model={n: dict(setting=r["setting"])
                                    for n, r in fc.iterrows()}))
     if not CHECK:
         (DATA / "freeciv_validation_stats.json").write_text(json.dumps(out, indent=1, default=float))
