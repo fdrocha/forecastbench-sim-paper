@@ -15,9 +15,9 @@ ap.add_argument("--paper-root", type=Path, required=True)
 DATA = ap.parse_args().paper_root.resolve() / "data"
 
 MICROPOLIS = [("Excess Brier, mid-range", "Binary"), ("Excess bits, tail", "Tail"), ("Excess nCRPS", "Continuous")]
-# (key in integration_numbers.json, label in the main table, label in the ForecastBench table)
-STARSIM = [("Excess CRPS, interventional", "Excess nCRPS, interventional", "Excess CRPS, interventional"),
-           ("Excess CRPS, continuous", "Excess nCRPS, continuous", "Excess CRPS, continuous")]
+# (key in integration_numbers.json, label in the tables)
+STARSIM = [("Excess CRPS, interventional", "Excess nCRPS, interventional"),
+           ("Excess CRPS, continuous", "Excess nCRPS, continuous")]
 
 def fmt_p(p):
     return "$<$0.001" if p < 0.001 else f"{p:.3f}"
@@ -30,15 +30,15 @@ def block(world, rows):
     return [(f"\\multirow{{{len(rows)}}}{{*}}{{{world}}}" if i == 0 else "") + " & " + " & ".join([label, *cells]) + r" \\"
             for i, (label, cells) in enumerate(rows)]
 
-def table(axis, with_n, ci_header, starsim_label, comment):
+def table(axis, with_n, ci_header, comment):
     pre = "MPD" if axis == "eci" else "MPDFB"
     micropolis = [(label, ([f"\\{pre}NModels{m}"] if with_n else [])
                    + [f"$\\{pre}Rho{m}Short$", f"\\{pre}Rho{m}CIModels", f"\\{pre}P{m}"]) for label, m in MICROPOLIS]
     validation = json.load(open(DATA / "starsim" / "integration_numbers.json"))["starsim"]["validation"]
     starsim = []
-    for key, main_label, fb_label in STARSIM:
+    for key, label in STARSIM:
         s = validation[key][axis]   # raw loss orientation: flip rho and its interval
-        starsim.append((main_label if starsim_label == "main" else fb_label,
+        starsim.append((label,
                         stat_cells(s["n"], -s["rho"], -s["hi"], -s["lo"], s["p"], with_n)))
     freeciv = [(r["score"], stat_cells(r[axis]["n"], r[axis]["rho"], r[axis]["ci_lo"], r[axis]["ci_hi"], r[axis]["p"], with_n))
                for r in json.load(open(DATA / "freeciv" / "freeciv_validation_stats.json"))["rows"]]
@@ -53,9 +53,9 @@ def table(axis, with_n, ci_header, starsim_label, comment):
     return "\n".join(lines) + "\n"
 
 for name, text in [
-        ("validation_table_main.tex", table("eci", True, r"95\% CI", "main",
+        ("validation_table_main.tex", table("eci", True, r"95\% CI",
                                             "Spearman rho with ECI, sign-adjusted; 95% CI over models; p from scipy.stats.spearmanr.")),
-        ("validation_table_forecastbench.tex", table("fb", False, "CI (models)", "fb",
+        ("validation_table_forecastbench.tex", table("fb", False, "CI (models)",
                                                      "Spearman rho with ForecastBench overall (17 models in every row), sign-adjusted; "
                                                      "95% CI over models; p from scipy.stats.spearmanr."))]:
     path = DATA / name
