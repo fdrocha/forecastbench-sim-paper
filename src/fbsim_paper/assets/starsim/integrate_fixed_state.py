@@ -52,8 +52,6 @@ be.fg.rho_ci=audit_rho
 be.fig_unconditional(long,O,C);be.fig_interventional(long,O);be.per_item_table(pi,O,C)
 sys.argv=['extra','--analysis-root',str(A),'--out',str(O)];runpy.run_path(str(HERE/'build_excess_extra.py'),run_name='__main__')
 for n,dest in {'starsim_excess_long.csv':'data/starsim/starsim_excess_long.csv','per_item_table.tex':'data/starsim/per_item_table.tex','per_item_table.json':'data/starsim/per_item_table.json',**{n+'.tex':'data/appendix_tables/'+n+'.tex' for n in ['starsim_models','starsim_horizon','starsim_rung_horizon']},**{n+'.'+ext:'figures/'+n+'.'+ext for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon'] for ext in ['pdf','png']}}.items():shutil.copy2(O/n,P/dest)
-for p in (P/'data/appendix_tables').glob('starsim*.tex'):
- t=p.read_text().replace('five elicited quantiles p10..p90 vs the matched replay seeds','five elicited quantiles p10..p90 vs fixed-state continuations').replace('(Nick, 2026-09-17)','via integrate_fixed_state.py (retrospective continuous rescore; binary unchanged)');p.write_text(t)
 val=json.loads((O/'validation_rows.json').read_text())
 for name,newrows in val['rows'].items():
  p=P/'data'/name
@@ -67,15 +65,6 @@ for name,newrows in val['rows'].items():
  # Rows returned after the binary row start with an ampersand.
  lines[start:start+count]=fixed
  lines[0]='% Starsim: repaired continuous only, 2,000 model-panel resamples; binary appendix-only.'
- p.write_text('\n'.join(lines)+'\n')
-# Suppress incomplete hold means in comparable full-set columns; preserve CSV values.
-for filename,indices in [('starsim_models.tex',[9]),('starsim_horizon.tex',[10,11])]:
- p=P/'data/appendix_tables'/filename;lines=p.read_text().splitlines()
- for i,line in enumerate(lines):
-  if line.startswith('DeepSeek V4 Flash'):
-   parts=line.split(' & ')
-   for col in indices:parts[col]='--' if col<len(parts)-1 else r'-- \\'
-   lines[i]=' & '.join(parts)
  p.write_text('\n'.join(lines)+'\n')
 # Refit CURRENT combined definition: nine cells, full-precision excess nCRPS for FreeCiv.
 sys.path.insert(0,str(COMBINED));sys.argv=['combined','--paper-root',str(P),'--out',str(O/'combined_score.json')]
