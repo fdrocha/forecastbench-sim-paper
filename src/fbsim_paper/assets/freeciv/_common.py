@@ -7,9 +7,8 @@ Two roots:
     Outputs go to its data/appendix_tables/ (tables), figures/ (figures) and data/freeciv/ (backing
     CSVs and the JSON side files that record every number).  Nothing else in the paper is touched,
     and no cell owned by another world is written: Micropolis tables, figures and macros come from
-    Fabio's analyze_paper.py, StarSim tables and figures from assets/starsim/.  The shared tables
-    (validation_table*) are edited in place, FreeCiv
-    cells only, by update_shared_tables.py.
+    Fabio's analyze_paper.py, StarSim tables and figures from assets/starsim/.  The FreeCiv rows of the shared
+    validation tables are typeset from validation_stats.py's JSON by combined/make_validation_tables.py.
 
     python worlds/freeciv/fbsim_v3/paper/<script>.py --paper-root /path/to/paper   (or export FBSIM_PAPER_ROOT)
 """

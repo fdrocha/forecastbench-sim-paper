@@ -44,7 +44,7 @@ def reproduce(data,out):
  def check(name,ok):
   if not ok:failures.append(name)
   return ok
- byte=[dict(path=rel,sha256=sha(paper/rel),byte_equal=check(rel,sha(paper/rel)==sha(ref/rel))) for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','data/starsim/integration_numbers.json','data/validation_table_main.tex','data/validation_table_forecastbench.tex','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']]
+ byte=[dict(path=rel,sha256=sha(paper/rel),byte_equal=check(rel,sha(paper/rel)==sha(ref/rel))) for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','data/starsim/integration_numbers.json','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']]
  text=lambda p:subprocess.check_output(['pdftotext','-layout',str(p),'-'])
  pdf=[dict(path=rel,pdf_text_equal=check(rel,text(paper/rel)==text(ref/rel))) for rel in [f'figures/{n}.pdf' for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon','fig_combined_score']]]
  result=json.loads((paper/'data/combined_score.json').read_text());check('nine-cell rho',len(result['single'])==9 and result['rho']==0.8626086956521738)

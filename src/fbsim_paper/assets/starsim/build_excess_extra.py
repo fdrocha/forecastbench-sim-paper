@@ -1,4 +1,4 @@
-"""Second pass on top of build_excess.py: appendix tables in the paper's layout, validation-table rows
+"""Second pass on top of build_excess.py: appendix tables in the paper's layout, validation statistics
 (ECI seed 0, matching the published figures; ForecastBench seed 2026; figures.rho_ci), p-values, the
 horizon figure in raw units (people), per-set item-difficulty summaries. Reads build_excess outputs."""
 import argparse, csv, json, statistics, sys
@@ -39,17 +39,6 @@ ROWS = [("Excess CRPS, interventional", ("continuous", "interventional", "pooled
 val = {}
 for label, key in ROWS:
     val[label] = dict(eci=stats(*key), fb=stats(*key, against="fb"))
-def fmt_row(label, s, first):
-    # sign flipped so that positive = more capable models score better (excess is lower-is-better)
-    rho, lo, hi = -s["rho"], -s["hi"], -s["lo"]; p = "$<$0.001" if s["p"] < 0.001 else f"{s['p']:.3f}"
-    lead = "\\multirow{3}{*}{Starsim}" if first else ""
-    return f"{lead} & {label} & {s['n']} & ${rho:.2f}$ & $[{lo:.2f}, {hi:.2f}]$ & {p}"
-snip = {"validation_table.tex": [], "validation_table_main.tex": [], "validation_table_forecastbench.tex": []}
-for i, (label, key) in enumerate(ROWS):
-    snip["validation_table.tex"].append(fmt_row(label, val[label]["eci"], i == 0) + " & -- \\\\")
-    snip["validation_table_main.tex"].append(fmt_row(label, val[label]["eci"], i == 0) + " \\\\")
-    snip["validation_table_forecastbench.tex"].append(fmt_row(label, val[label]["fb"], i == 0) + " & -- \\\\")
-(OUT / "validation_rows.json").write_text(json.dumps({"stats": val, "rows": snip}, indent=1))
 
 # ---- appendix tables in the paper's layout ------------------------------------------------------------
 def f3(x):
@@ -139,4 +128,4 @@ summ = dict(binary=dict(n_le_0_01=sum(v <= 0.01 for v in b), n_le_0_05=sum(v <= 
             hold=dict(max=max(q[2] for q in pts("binary", "interventional", "hold") if q[3]), worst=[(fg.SHORT.get(q[0], q[0]), round(q[2], 2)) for q in sorted([q for q in pts("binary", "interventional", "hold") if q[3]], key=lambda q: -q[2])[:3]], best=[(fg.SHORT.get(q[0], q[0]), round(q[2], 3)) for q in sorted([q for q in pts("binary", "interventional", "hold") if q[3]], key=lambda q: q[2])[:2]]),
             calls_cost=dict(calls=sum(int(r["n_calls"]) for r in long if r["horizon"] == "pooled" and not r["rung"].startswith("pooled")), cost=sum(r["cost_usd"] for r in long if r["horizon"] == "pooled" and not r["rung"].startswith("pooled"))))
 json.dump(dict(validation=val, horizon_raw=hstats, difficulty=diff, summary=summ), open(OUT / "numbers_extra.json", "w"), indent=1, default=float)
-print(json.dumps(dict(validation=val, horizon_raw=hstats, difficulty=diff, summary=summ), indent=0, default=float)); print("\n".join("\n".join(v) for v in snip.values()))
+print(json.dumps(dict(validation=val, horizon_raw=hstats, difficulty=diff, summary=summ), indent=0, default=float))

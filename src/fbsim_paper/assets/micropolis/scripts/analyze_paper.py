@@ -1602,8 +1602,9 @@ def macro_p(p: float) -> str:
 def macro_lines(h: Headline, c) -> list[str]:
     r"""The \newcommand lines for one headline correlation.
 
-    Six macros: the coefficient, its two intervals, its p-value and the two
-    counts the interval widths depend on. The counts are macros rather than
+    Seven macros: the coefficient (also to two decimals, as the validation
+    tables print it), its two intervals, its p-value and the two counts the
+    interval widths depend on. The counts are macros rather than
     prose so a rerun that adds a model or a city cannot leave a stale n
     behind in the article.
     """
@@ -1612,6 +1613,7 @@ def macro_lines(h: Headline, c) -> list[str]:
     return [
         f"% {h.what}",
         f"\\newcommand{{\\{pre}Rho{h.macro}}}{{{rho:.3f}}}",
+        f"\\newcommand{{\\{pre}Rho{h.macro}Short}}{{{rho:.2f}}}",
         (
             f"\\newcommand{{\\{pre}Rho{h.macro}CIModels}}"
             f"{{{macro_band(adjusted_band(c.rho_models))}}}"
@@ -1744,6 +1746,7 @@ def predictor_lines(
         stem = f"{pre}{prefix}"
         lines += [
             f"\\newcommand{{\\{stem}Rho{h.macro}}}{{{adjusted(c.rho):.3f}}}",
+            f"\\newcommand{{\\{stem}Rho{h.macro}Short}}{{{adjusted(c.rho):.2f}}}",
             (
                 f"\\newcommand{{\\{stem}Rho{h.macro}CIModels}}"
                 f"{{{macro_band(adjusted_band(c.rho_models))}}}"

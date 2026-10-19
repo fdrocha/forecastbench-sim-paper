@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-"""Edit the FreeCiv rows of the validation tables that three worlds share, in place.
+"""FreeCiv's validation statistics: Spearman rho of each headline score with ECI and with ForecastBench overall.
 
-    python src/fbsim_paper/assets/freeciv/update_shared_tables.py [--final] [--check]
+    python src/fbsim_paper/assets/freeciv/validation_stats.py --paper-root PAPER [--check]
 
-Touches, FreeCiv cells only, leaving every other cell as it is:
-  data/validation_table.tex              the four FreeCiv rows (rho vs ECI, CI over models, p, CI over the 8 games)
-  data/validation_table_forecastbench.tex the same rows against ForecastBench overall
-  data/validation_table_main.tex         the four FreeCiv rows with the eight-game interval as the one CI
-and writes data/freeciv/freeciv_validation_stats.json with every statistic and its method.
-
-Row and column positions are located by label, never by index alone, and the script refuses to write if a
-table's shape is not what it expects.
-
---final drops the "(provisional)" qualifier from the FreeCiv row label and the comment lines (for the
-rerun at 50 questions per prompt).  --check recomputes and reports differences without writing.
+Writes data/freeciv/freeciv_validation_stats.json with every statistic and its method; combined/
+make_validation_tables.py typesets the FreeCiv rows of the validation tables from it.  --check recomputes
+without writing.
 
 Sources (data/freeciv/): freeciv_results_wide.csv (headline scores, calls, cost),
 score_items.csv.gz (per-item rows for the cluster bootstrap over the eight anchor games), model_scores.csv.
@@ -21,17 +13,15 @@ The FreeCiv statistics reproduce the retired data/compute_validation_stats.py (s
 count, same bootstrap order).
 """
 import json
-import re
 import sys
 from datetime import date
 
 import numpy as np
 from scipy.stats import spearmanr
 
-from _common import (DATA, N_BOOT, RUN, PAPER_DATA, REPO, SCORE_ITEMS, SEED, WIDE,
+from _common import (DATA, N_BOOT, RUN, SCORE_ITEMS, SEED, WIDE,
                      load_capability, load_items, load_wide, rel)
 
-FINAL = "--final" in sys.argv[1:]
 CHECK = "--check" in sys.argv[1:]
 
 # The four FreeCiv headline rows: (table label, wide column, score_items set, score_items column).
@@ -41,33 +31,6 @@ FREECIV_SETS = [
     ("Excess Brier, natural conditional", "natcond_all_excess_t2", "natcond", "excess_t2"),
     ("Excess Brier, mid-range", "bank_all_excess_brier", "bank", "excess_brier"),
 ]
-WORLD_LABEL = "FreeCiv" if FINAL else "\\shortstack[l]{FreeCiv\\\\(provisional)}"
-
-
-def read_lines(path):
-    return path.read_text().splitlines()
-
-
-def write_lines(path, lines, old):
-    new = "\n".join(lines) + "\n"
-    if new == old:
-        print(f"unchanged  {rel(path)}")
-        return
-    if CHECK:
-        print(f"WOULD EDIT {rel(path)}")
-        return
-    path.write_text(new)
-    print(f"edited     {rel(path)}")
-
-
-def cells_of(line):
-    body = line.rstrip()
-    assert body.endswith("\\\\"), line
-    return [c.strip() for c in body[:-2].split("&")]
-
-
-def join_cells(cells):
-    return " & ".join(cells) + " \\\\"
 
 
 # ---------------------------------------------------------------- statistics
@@ -116,10 +79,6 @@ def cluster_bootstrap(tab, cap_axis, sign, rng):
                 items_per_world=tab["items_per_world"], full_sample_means=dict(zip(np.array(models)[keep], map(float, full))))
 
 
-def fmt_p(p):
-    return "$<$0.001" if p < 0.001 else f"{p:.3f}"
-
-
 def fmt_ci(lo, hi):
     return f"$[{lo:.2f}, {hi:.2f}]$"
 
@@ -153,56 +112,14 @@ def validation_rows():
     return out
 
 
-# ---------------------------------------------------------------- the tables
-def update_validation(rows):
-    def replace_block(path, make_cells):
-        if not path.is_file():   # the manuscript reads hand-frozen copies since the 2026-09-24 code freeze
-            return
-        old = path.read_text()
-        lines = read_lines(path)
-        # locate the FreeCiv block: the row whose first cell holds a multirow with FreeCiv, plus the three rows after it
-        start = next(i for i, l in enumerate(lines) if "multirow" in l and "FreeCiv" in l)
-        block = lines[start:start + 4]
-        assert all(l.rstrip().endswith("\\\\") for l in block), block
-        OLD_LABELS = {"nCRPS": "Excess nCRPS", "Bank excess Brier": "Excess Brier, mid-range", "Mid-range excess Brier": "Excess Brier, mid-range",   # labels before 21 September 2026
-                      "Tail excess bits": "Excess bits, tail", "Natural-conditional excess Brier": "Excess Brier, natural conditional"}
-        assert [OLD_LABELS.get(cells_of(l)[1], cells_of(l)[1]) for l in block] == [r["score"] for r in rows], [cells_of(l)[1] for l in block]
-        new_block = []
-        for gi, r in enumerate(rows):
-            cells = make_cells(r)
-            cell_world = f"\\multirow{{4}}{{*}}{{{WORLD_LABEL}}}" if gi == 0 else ""
-            new_block.append(join_cells([cell_world] + cells))
-        lines[start:start + 4] = new_block
-        if FINAL:
-            lines = [re.sub(r"; FreeCiv is provisional \(one question per prompt\)", "", l) if l.startswith("%") else l for l in lines]
-        lines = [l.replace("one CI column (models for Micropolis and StarSim; eight-game cluster bootstrap for FreeCiv)", "one CI column, the bootstrap over models in every row (Appendix C adds FreeCiv's interval over its eight worlds)") if l.startswith("%") else l for l in lines]
-        write_lines(path, lines, old)
-
-    def full(axis):
-        def make(r):
-            st, cl = r[axis], r[f"{axis}_cluster"]
-            return [r["score"], str(st["n"]), f"${st['rho']:.2f}$", fmt_ci(st["ci_lo"], st["ci_hi"]), fmt_p(st["p"]),
-                    fmt_ci(cl["ci_lo"], cl["ci_hi"])]
-        return make
-
-    def main_(r):
-        st, cl = r["eci"], r["eci_cluster"]
-        return [r["score"], str(st["n"]), f"${st['rho']:.2f}$", fmt_ci(st["ci_lo"], st["ci_hi"]), fmt_p(st["p"])]   # 21 September 2026: the interval over models, as in every other row
-
-    replace_block(PAPER_DATA / "validation_table.tex", full("eci"))
-    replace_block(PAPER_DATA / "validation_table_forecastbench.tex", full("fb"))
-    replace_block(PAPER_DATA / "validation_table_main.tex", main_)
-
-
 def main():
     rows = validation_rows()
     w = load_wide()
-    update_validation(rows)
     cap = load_capability()
     both = cap.dropna()
     rng = np.random.default_rng(SEED)
-    out = dict(generated=str(date.today()), script="forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/update_shared_tables.py", seed=SEED, n_boot=N_BOOT,
-               final=FINAL, sources={"wide": rel(WIDE), "score_items": rel(SCORE_ITEMS),
+    out = dict(generated=str(date.today()), script="forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/validation_stats.py", seed=SEED, n_boot=N_BOOT,
+               sources={"wide": rel(WIDE), "score_items": rel(SCORE_ITEMS),
                                      "run": RUN},
                sign_convention="rho between the capability score and (-1 x score); positive = more capable models score better",
                model_bootstrap=f"percentile bootstrap over the (capability, score) model pairs, {N_BOOT:,} resamples, "

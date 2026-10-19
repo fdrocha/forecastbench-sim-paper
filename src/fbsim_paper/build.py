@@ -38,13 +38,14 @@ def _commands(step, data, paper, tmp):
             [py, str(A/'make_freeciv_forecast_files.py'), '--results', str(results/FREECIV_RUN), '--sets', str(src/'sets/draw_v1'), '--out', str(paper/'data/freeciv')],
             [py, str(A/'effort_check_report.py'), str(results/FREECIV_RUN), str(results/'run2_effort'), str(results/'run2b_2026-09-20/batched'),
              '--run1', str(results/'run1_2026-09-09'), '--out', str(paper/'data/freeciv/freeciv_effort_check.json')],
-            [py, str(A/'update_shared_tables.py'), '--paper-root', str(paper), '--final'],
+            [py, str(A/'validation_stats.py'), '--paper-root', str(paper)],
             [py, str(A/'make_freeciv_figs.py'), '--paper-root', str(paper)]]
     analysis = analysis_root(data, tmp/'analysis'); S = ASSETS/'starsim'
     return _env(tmp), [
         [py, str(S/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
          '--audit-root', str(data/'datasets/starsim-audit/production_v1'), '--out', str(tmp/'generated')],
-        [py, str(ASSETS/'combined'/'make_roster_table.py'), '--paper-root', str(paper)]]
+        [py, str(ASSETS/'combined'/'make_roster_table.py'), '--paper-root', str(paper)],
+        [py, str(ASSETS/'combined'/'make_validation_tables.py'), '--paper-root', str(paper)]]
 
 def run(steps, data, paper, allow_dirty=False):
     unknown = set(steps) - set(STEPS)

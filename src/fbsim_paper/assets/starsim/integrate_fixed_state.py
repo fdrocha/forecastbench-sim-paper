@@ -52,20 +52,6 @@ be.fg.rho_ci=audit_rho
 be.fig_unconditional(long,O,C);be.fig_interventional(long,O);be.per_item_table(pi,O,C)
 sys.argv=['extra','--analysis-root',str(A),'--out',str(O)];runpy.run_path(str(HERE/'build_excess_extra.py'),run_name='__main__')
 for n,dest in {'starsim_excess_long.csv':'data/starsim/starsim_excess_long.csv','per_item_table.tex':'data/starsim/per_item_table.tex','per_item_table.json':'data/starsim/per_item_table.json',**{n+'.tex':'data/appendix_tables/'+n+'.tex' for n in ['starsim_models','starsim_horizon','starsim_rung_horizon']},**{n+'.'+ext:'figures/'+n+'.'+ext for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon'] for ext in ['pdf','png']}}.items():shutil.copy2(O/n,P/dest)
-val=json.loads((O/'validation_rows.json').read_text())
-for name,newrows in val['rows'].items():
- p=P/'data'/name
- if not p.is_file():continue  # the manuscript reads hand-frozen copies since the 2026-09-24 code freeze
- lines=p.read_text().splitlines()
- hits=[i for i,l in enumerate(lines) if ('multirow{3}{*}{StarSim}' in l or 'multirow{3}{*}{Starsim}' in l or 'multirow{2}{*}{Starsim}' in l)];assert len(hits)==1
- start=hits[0]; count=2 if 'multirow{2}' in lines[start] else 3
- fixed=[r.replace('StarSim','Starsim') for r in newrows if 'Excess bits, binary' not in r]
- assert len(fixed)==2
- fixed[0]=r'\multirow{2}{*}{Starsim}'+fixed[0].replace(r'\multirow{3}{*}{Starsim}','').lstrip()
- # Rows returned after the binary row start with an ampersand.
- lines[start:start+count]=fixed
- lines[0]='% Starsim: repaired continuous only, 2,000 model-panel resamples; binary appendix-only.'
- p.write_text('\n'.join(lines)+'\n')
 # Refit CURRENT combined definition: nine cells, full-precision excess nCRPS for FreeCiv.
 sys.path.insert(0,str(COMBINED));sys.argv=['combined','--paper-root',str(P),'--out',str(O/'combined_score.json')]
 g=runpy.run_path(str(COMBINED/'combined_score.py'),run_name='integration_import')

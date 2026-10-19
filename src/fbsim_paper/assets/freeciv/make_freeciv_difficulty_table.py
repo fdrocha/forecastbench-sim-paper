@@ -6,7 +6,7 @@
 Input:  data/freeciv/family_horizon_scores.csv (model, set, family, horizon, excess, bits, ncrps, n)
 Output: data/appendix_tables/freeciv_family_difficulty.tex
 This is the first half of the retired data/make_difficulty_cost_tables.py (2026-09-16); the cost rows
-that script also wrote are now edited in place by update_shared_tables.py.
+that script also wrote are no longer generated.
 """
 import pandas as pd
 
