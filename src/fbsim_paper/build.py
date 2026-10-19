@@ -4,8 +4,9 @@ import shutil, subprocess, sys, tempfile, time
 from .cached import _env, commands
 from .runner import ASSETS, analysis_root
 
-# In dependency order: the Starsim step also refits the combined score and the rank tables from all three worlds.
-STEPS = ['micropolis', 'freeciv', 'starsim']
+# In dependency order: the combined step refits the combined score and writes the cross-world tables from the
+# other three steps' files.
+STEPS = ['micropolis', 'freeciv', 'starsim', 'combined']
 INPUTS = 'datasets/paper-inputs'
 FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
 FREECIV_RUN = 'run2_paper'
@@ -40,12 +41,14 @@ def _commands(step, data, paper, tmp):
              '--run1', str(results/'run1_2026-09-09'), '--out', str(paper/'data/freeciv/freeciv_effort_check.json')],
             [py, str(A/'validation_stats.py'), '--paper-root', str(paper)],
             [py, str(A/'make_freeciv_figs.py'), '--paper-root', str(paper)]]
-    analysis = analysis_root(data, tmp/'analysis'); S = ASSETS/'starsim'
-    return _env(tmp), [
-        [py, str(S/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
-         '--audit-root', str(data/'datasets/starsim-audit/production_v1'), '--out', str(tmp/'generated')],
-        [py, str(ASSETS/'combined'/'make_roster_table.py'), '--paper-root', str(paper)],
-        [py, str(ASSETS/'combined'/'make_validation_tables.py'), '--paper-root', str(paper)]]
+    if step == 'starsim':
+        analysis = analysis_root(data, tmp/'analysis')
+        return _env(tmp), [[py, str(ASSETS/'starsim'/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
+                             '--audit-root', str(data/'datasets/starsim-audit/production_v1'), '--out', str(tmp/'generated')]]
+    C = ASSETS/'combined'
+    return _env(tmp), [[py, str(C/'refit_combined.py'), '--paper-root', str(paper), '--out', str(tmp/'generated')],
+                       [py, str(C/'make_roster_table.py'), '--paper-root', str(paper)],
+                       [py, str(C/'make_validation_tables.py'), '--paper-root', str(paper)]]
 
 def run(steps, data, paper, allow_dirty=False):
     unknown = set(steps) - set(STEPS)

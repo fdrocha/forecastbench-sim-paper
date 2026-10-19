@@ -38,17 +38,23 @@ def reproduce(data,out):
  probe=subprocess.run([sys.executable,'-c',"import socket;socket.create_connection(('127.0.0.1',9))"],env=env,capture_output=True,text=True)
  assert probe.returncode and 'offline reproduction guard' in probe.stderr
  cmd=[sys.executable,str(ASSETS/'starsim/integrate_fixed_state.py'),'--paper-root',str(paper),'--analysis-root',str(analysis),'--audit-root',str(data/'datasets/starsim-audit/production_v1'),'--out',str(out/'generated')]
- with (out/'reproduction.log').open('w') as f:subprocess.run(cmd,env=env,stdout=f,stderr=subprocess.STDOUT,check=True)
+ refit=[sys.executable,str(ASSETS/'combined/refit_combined.py'),'--paper-root',str(paper),'--out',str(out/'generated')]
+ with (out/'reproduction.log').open('w') as f:
+  for c in (cmd,refit):subprocess.run(c,env=env,stdout=f,stderr=subprocess.STDOUT,check=True)
  # Run every check, so one mismatch does not hide the others; main fails afterwards if any did.
  failures=[]
  def check(name,ok):
   if not ok:failures.append(name)
   return ok
- byte=[dict(path=rel,sha256=sha(paper/rel),byte_equal=check(rel,sha(paper/rel)==sha(ref/rel))) for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','data/starsim/integration_numbers.json','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']]
+ byte=[dict(path=rel,sha256=sha(paper/rel),byte_equal=check(rel,sha(paper/rel)==sha(ref/rel))) for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']]
  text=lambda p:subprocess.check_output(['pdftotext','-layout',str(p),'-'])
  pdf=[dict(path=rel,pdf_text_equal=check(rel,text(paper/rel)==text(ref/rel))) for rel in [f'figures/{n}.pdf' for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon','fig_combined_score']]]
+ # integration_numbers.json no longer repeats the combined step's numbers (in combined_score.json and
+ # combined_matched_panel.json), so compare the Starsim step's keys.
+ nums=lambda p:{k:json.loads((p/'data/starsim/integration_numbers.json').read_text())[k] for k in ('starsim','inputs')}
+ integration=dict(path='data/starsim/integration_numbers.json',keys=['starsim','inputs'],equal=check('data/starsim/integration_numbers.json',nums(paper)==nums(ref)))
  result=json.loads((paper/'data/combined_score.json').read_text());check('nine-cell rho',len(result['single'])==9 and result['rho']==0.8626086956521738)
- checks.update(byte_checks=byte,pdf_text_checks=pdf,nine_cell_rho=result['rho'],checks_run=len(byte)+len(pdf)+1,failures=failures,elapsed_seconds=time.monotonic()-start,network_guard_probe='PASS',simulations=0,model_calls=0,scope='Cached Starsim/combined reproduction; frozen Micropolis/FreeCiv inputs, not full replay regeneration')
+ checks.update(byte_checks=byte,integration_numbers_check=integration,pdf_text_checks=pdf,nine_cell_rho=result['rho'],checks_run=len(byte)+len(pdf)+2,failures=failures,elapsed_seconds=time.monotonic()-start,network_guard_probe='PASS',simulations=0,model_calls=0,scope='Cached Starsim/combined reproduction; frozen Micropolis/FreeCiv inputs, not full replay regeneration')
  from .cached import _compare
  checks['all_generated_comparisons']=_compare(ref,paper,before)
  (out/'verification.json').write_text(json.dumps(checks,indent=2)+'\n');return checks
@@ -66,7 +72,7 @@ def main():
   q=s.add_parser(name);q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
   if name.startswith('reproduce'):q.add_argument('--output',type=Path,required=True)
  q=s.add_parser('build',help='Regenerate the manuscript checkout\'s generated files in place')
- q.add_argument('steps',nargs='*',help='Any of micropolis, freeciv, starsim (default: all, in that order)')
+ q.add_argument('steps',nargs='*',help='Any of micropolis, freeciv, starsim, combined (default: all, in that order)')
  q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
  q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
  q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')

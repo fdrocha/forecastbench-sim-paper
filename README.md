@@ -42,21 +42,22 @@ Copy `.env.example` to `.env` (not committed) and set the paths in it. `fbsim-pa
 `build` regenerates the manuscript's generated tables, figures, macros and data files in place, from this checkout's scripts:
 
 ```sh
-fbsim-paper build                      # every step: micropolis, freeciv, starsim
-fbsim-paper build micropolis starsim   # only these steps (always run in that order)
+fbsim-paper build                      # every step: micropolis, freeciv, starsim, combined
+fbsim-paper build micropolis combined  # only these steps (always run in that order)
 ```
 
 1. It refuses to run if the manuscript has uncommitted changes under `data/` or `figures/`, which it would overwrite; `--allow-dirty` overrides.
 2. It copies each file of `$FBSIM_DATA_ROOT/datasets/paper-inputs` to the same path under the manuscript's `data/`, where the content differs. That folder is the working copy of the build's own inputs (the others are versioned archive folders, read in place); the manuscript keeps copies, so edit them in the archive, not in the manuscript.
-3. It runs each step's scripts against the manuscript checkout, writing over the files they generate:
-   - Micropolis: `analyze_paper.py`, from the gathered CSVs in `paper-inputs/micropolis`, including its cells of the shared cost tables.
-   - FreeCiv: from the archived run (`freeciv-source`, run `run2_paper`), the backing files and README of `data/freeciv/`, the appendix tables, the per-forecast files, the reasoning-effort check, its cells of the shared cost, roster and validation tables, and the figures.
-   - Starsim: `integrate_fixed_state.py`, from the cached calls and the fixed-state audit (`analysis-original`, `starsim-audit`). It also refits the combined score and the rank tables from all three worlds, so rerun it after changing Micropolis or FreeCiv. Then `build_metadata.py` fills Starsim's cells of the shared tables.
+3. It runs each step's scripts against the manuscript checkout, writing over the files they generate. Every table is written whole; nothing reads or edits a `.tex` file.
+   - Micropolis: `analyze_paper.py`, from the gathered CSVs in `paper-inputs/micropolis`: macros, appendix tables, figures and the CSVs in `data/micropolis/`.
+   - FreeCiv: from the archived run (`freeciv-source`, run `run2_paper`): the backing files of `data/freeciv/`, the appendix tables, the per-forecast files, the reasoning-effort check, the validation statistics and the figures.
+   - Starsim: `integrate_fixed_state.py`, from the cached calls and the fixed-state audit (`analysis-original`, `starsim-audit`): Starsim's scores, appendix tables and figures.
+   - Combined: from the other three steps' files in the manuscript's `data/`, `refit_combined.py` refits the combined score (with its figure, the rank tables and the fixed-state uncertainty table), and `make_roster_table.py` and `make_validation_tables.py` write the roster and the two validation tables. Rerun it after changing any world.
 4. It prints `git status` of the manuscript's `data/` and `figures/`. Review the diff there and commit both repositories.
 
 To use your forecastbench-sim checkout instead of the pinned benchmark, run `./build_paper.sh [steps]`, which takes the same arguments as `build`. It installs `fbsim-core` and `fbsim-benchmark` from `FBSIM_REPO_ROOT`, and this repository, as editable packages into `.venv-build`, then runs `fbsim-paper build`. `.venv-build` is separate from `.venv`, which keeps the pinned benchmark that `validate` and `reproduce` check. Reinstalling takes under a second when nothing changed. Use the script, or `uv pip`, rather than `uv sync` or `uv run`: those resolve the pinned benchmark packages from the package index, where they are not published.
 
-There are no hash checks and no snapshot copy, so `build` works while code and inputs change; `validate` and `reproduce` are for frozen releases. Figures get a fixed PDF date (`SOURCE_DATE_EPOCH=0` unless set), so an unchanged figure leaves no diff. A full build takes about 2.5 minutes. Hand-written and frozen files are not generated: `openrouter_ids_table.tex`, `human_pilot_table.tex`, the `*_frozen.tex` validation tables and the schematic.
+There are no hash checks and no snapshot copy, so `build` works while code and inputs change; `validate` and `reproduce` are for frozen releases. Figures get a fixed PDF date (`SOURCE_DATE_EPOCH=0` unless set), so an unchanged figure leaves no diff. A full build takes about 2.5 minutes. Hand-written files are not generated: `openrouter_ids_table.tex`, `human_pilot_table.tex` and the schematic. Generated files carry no review markup: when a generated table or figure changes visibly, note it in its caption in the manuscript with `\changenote`.
 
 ## Releasing a paper version (planned)
 
@@ -84,7 +85,7 @@ Each command takes `--data-root` or `FBSIM_DATA_ROOT` (see Settings). Each outpu
 
 Starsim uses retained forecasts with repaired continuous truth; historical binary results remain appendix-only and excluded from the nine-cell combined score. FreeCiv consumes cached per-item/aggregate results; Micropolis consumes frozen gathered CSVs. `verification.json` distinguishes byte equality, PDF-text equality, numerical roundoff and layout differences. The known FreeCiv capability-figure annotation presence/placement mismatch remains; JSON roundoff is at most 4.22e-15 in the verified run. Do not replace frozen artifacts merely because a route succeeds.
 
-**`reproduce` is expected to fail until the next paper release.** The scripts here now follow the manuscript (they match it at 2e57585, including its sign correction, rho(ECI, -loss)), while the cached routes still compare against the f214afe3 release. `reproduce` runs all 15 checks, records them in `verification.json` and exits nonzero if any fail: 4 do, the PNGs and PDF text of `fig_starsim_unconditional` and `fig_starsim_interventional`, whose annotations changed. Every data file it checks still matches f214afe3, and its Starsim and combined figures match the manuscript at 2e57585. `reproduce-freeciv` and `reproduce-micropolis` never fail on differences, but their comparisons drift the same way as their scripts change. All three are re-baselined when the next paper version is released (see "Releasing a paper version"). Until then, check out commit `7a00369` (the SciPy pin, the last commit where it passes) to rerun the passing f214afe3 verification.
+**`reproduce` is expected to fail until the next paper release.** The scripts here now follow the manuscript (they match it at 2e57585, including its sign correction, rho(ECI, -loss)), while the cached routes still compare against the f214afe3 release. `reproduce` runs all 13 checks, records them in `verification.json` and exits nonzero if any fail: 4 do, the PNGs and PDF text of `fig_starsim_unconditional` and `fig_starsim_interventional`, whose annotations changed. Every data file it checks still matches f214afe3, and its Starsim and combined figures match the manuscript at 2e57585. `reproduce-freeciv` and `reproduce-micropolis` never fail on differences, but their comparisons drift the same way as their scripts change. All three are re-baselined when the next paper version is released (see "Releasing a paper version"). Until then, check out commit `7a00369` (the SciPy pin, the last commit where it passes) to rerun the passing f214afe3 verification.
 
 See [limitations](docs/MIGRATION_GAPS.md), [boundaries](docs/BOUNDARIES.md), [attribution](docs/ATTRIBUTION.md), and the historical [results map](docs/results-map.yaml). Original histories and private data remain preserved separately.
 

@@ -67,7 +67,9 @@ def write_figure(r, out_dir):
     out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
     rc = {"font.family": "serif", "font.serif": ["Times New Roman", "Times", "Nimbus Roman", "DejaVu Serif"],
           "mathtext.fontset": "stix", "font.size": 8, "axes.labelsize": 8, "xtick.labelsize": 7, "ytick.labelsize": 7,
-          "axes.spines.top": False, "axes.spines.right": False, "pdf.fonttype": 42}
+          "axes.spines.top": False, "axes.spines.right": False, "pdf.fonttype": 42,
+          # as the Starsim figures set them; this figure used to inherit them from that module's global rcParams
+          "axes.linewidth": 0.6, "xtick.major.width": 0.6, "ytick.major.width": 0.6}
     with plt.rc_context(rc):
         fig, ax = plt.subplots(figsize=(3.6, 2.9))
         pts = sorted([(m, ECI[m], r["theta"][m]) for m in MODELS], key=lambda t: t[1])
