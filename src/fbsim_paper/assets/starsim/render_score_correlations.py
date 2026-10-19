@@ -15,7 +15,6 @@ import csv
 import hashlib
 import json
 import math
-import numpy as np
 from scipy.stats import spearmanr
 
 

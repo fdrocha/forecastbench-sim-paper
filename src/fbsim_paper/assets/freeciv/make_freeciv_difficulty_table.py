@@ -10,7 +10,7 @@ that script also wrote are no longer generated.
 """
 import pandas as pd
 
-from _common import FAMILY_HORIZON, REPO, TABLES, rel
+from _common import FAMILY_HORIZON, TABLES, rel
 
 TABLES.mkdir(parents=True, exist_ok=True)
 f = pd.read_csv(FAMILY_HORIZON)

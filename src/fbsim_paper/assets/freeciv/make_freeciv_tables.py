@@ -24,9 +24,8 @@ import re
 from datetime import date
 
 import numpy as np
-import pandas as pd
 
-from _common import (DATA, REPO, RUN, SCORES_MD, SCORE_ITEMS, TABLES, WIDE, fmt, load_capability, load_items,
+from _common import (DATA, RUN, SCORES_MD, SCORE_ITEMS, TABLES, WIDE, fmt, load_capability, load_items,
                      load_wide, models_by_eci, name, parse_md_tables, spearman_signed, write_tabular, rel)
 
 TABLES.mkdir(parents=True, exist_ok=True)

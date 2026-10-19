@@ -15,9 +15,8 @@ Sources (data/freeciv/):
 """
 import json
 import re
-from pathlib import Path
 
-from _common import COMPOSITION as COMP, NORM_CONSTANTS as NORM, PAPER_DATA as HERE, SCORE_ITEMS, DATA, REPO, rel  # noqa: E402
+from _common import COMPOSITION as COMP, NORM_CONSTANTS as NORM, PAPER_DATA as HERE, SCORE_ITEMS, DATA, rel  # noqa: E402
 
 text = COMP.read_text()
 

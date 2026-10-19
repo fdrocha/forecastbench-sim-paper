@@ -130,7 +130,6 @@ from analyze_binary import (
     SCORES,
     TAIL,
     Score,
-    capability_predictors,
     plot_eci_vs_score,
 )
 from analyze_continuous import (

@@ -13,7 +13,7 @@ Truth for every item is the 1,000-replay frequency/distribution, so "brier" here
 expected_brier column; recov = 1 - excess/(0.5-p)^2-style is NOT used — recov follows Nick: share of the recoverable Brier score,
 1 - excess_brier / excess_brier(always 0.5).
 """
-import sys, os, csv, json, glob, collections, math
+import sys, os, csv, collections, math
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import score_v1 as sv

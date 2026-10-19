@@ -13,7 +13,6 @@ Inputs are read from data/freeciv/ (see _common.py). Moved from the retired pape
 import json
 import sys
 import warnings
-from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -374,7 +373,7 @@ for ax, (key, spec) in zip(axes, PANELS.items()):
                    iqr_q25=q25.tolist(), iqr_q75=q75.tolist(),
                    per_model={m: per_model[i].tolist() for i, m in enumerate(models)},
                    reference=(dict(label=ref_label, values=ref) if ref is not None else None))
-    print(f"{key:11s} horizon means: " + " ".join(f"{v:.3f}" for v in mean) + (f" ref: " + " ".join(f"{v:.3f}" for v in ref) if ref else ""))
+    print(f"{key:11s} horizon means: " + " ".join(f"{v:.3f}" for v in mean) + (" ref: " + " ".join(f"{v:.3f}" for v in ref) if ref else ""))
 axes[0].legend(loc="lower right", fontsize=7.5, handlelength=1.6, borderaxespad=0.3)
 save(fig, "fig_freeciv_horizon", dict(source=rel(ITEMS), panels=hz, provisional=PROV,
                                       notes="mean and interquartile range across the 24 per-model means at each resolution turn; snapshot at turn 60; natural conditionals exist only for T120-T210; bank reference = mean (0.5-q)^2 over that horizon's items; tails reference = mean KL(q||0.05); natcond reference = mean over models of the not-updating excess (p1 - p(Y|X))^2"))

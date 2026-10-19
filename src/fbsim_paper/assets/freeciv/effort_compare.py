@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """effort_compare.py LOW_DIR MEDIUM_DIR — same items, two effort levels: per model excess Brier, bias, slope, reasoning tokens,
 cost; and the Spearman of each with ECI across the compared models."""
-import sys, os, csv, json, collections, numpy as np
+import sys, os, csv, numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import score_v1 as sv
 from scipy.stats import spearmanr
