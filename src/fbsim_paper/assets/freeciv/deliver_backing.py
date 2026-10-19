@@ -32,7 +32,7 @@ Copied from `worlds/freeciv/fbsim_v3/results/{RUN}/` of the `forecastbench-sim` 
 generators in that folder write the FreeCiv tables (`../appendix_tables/freeciv_*.tex`,
 `../freeciv_*_families.tex`, `../freeciv_items_per_anchor.tex`), the FreeCiv figures
 (`../../figures/fig_freeciv_*.pdf` with a JSON of every plotted number beside each) and the FreeCiv
-cells of the shared tables (`../roster_table.tex`, `../validation_table*.tex`).
+rows of the shared validation tables (`../validation_table*.tex`).
 
 | file | what |
 |---|---|

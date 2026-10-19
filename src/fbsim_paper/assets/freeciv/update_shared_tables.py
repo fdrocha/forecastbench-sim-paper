@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-"""Edit the FreeCiv cells of the tables that three worlds share, in place.
+"""Edit the FreeCiv rows of the validation tables that three worlds share, in place.
 
     python src/fbsim_paper/assets/freeciv/update_shared_tables.py [--final] [--check]
 
 Touches, FreeCiv cells only, leaving every other cell as it is:
-  data/roster_table.tex                  the FreeCiv reasoning-setting column
   data/validation_table.tex              the four FreeCiv rows (rho vs ECI, CI over models, p, CI over the 8 games)
   data/validation_table_forecastbench.tex the same rows against ForecastBench overall
   data/validation_table_main.tex         the four FreeCiv rows with the eight-game interval as the one CI
@@ -16,7 +15,7 @@ table's shape is not what it expects.
 --final drops the "(provisional)" qualifier from the FreeCiv row label and the comment lines (for the
 rerun at 50 questions per prompt).  --check recomputes and reports differences without writing.
 
-Sources (data/freeciv/): freeciv_results_wide.csv (headline scores, calls, cost), models_v1.csv (reasoning setting),
+Sources (data/freeciv/): freeciv_results_wide.csv (headline scores, calls, cost),
 score_items.csv.gz (per-item rows for the cluster bootstrap over the eight anchor games), model_scores.csv.
 The FreeCiv statistics reproduce the retired data/compute_validation_stats.py (same seed, same resample
 count, same bootstrap order).
@@ -27,11 +26,10 @@ import sys
 from datetime import date
 
 import numpy as np
-import pandas as pd
 from scipy.stats import spearmanr
 
-from _common import (DATA, MODELS_FILE, N_BOOT, RUN, PAPER_DATA, REPO, SCORE_ITEMS, SEED, WIDE,
-                     display_name, load_capability, load_items, load_wide, tex, rel)
+from _common import (DATA, N_BOOT, RUN, PAPER_DATA, REPO, SCORE_ITEMS, SEED, WIDE,
+                     load_capability, load_items, load_wide, rel)
 
 FINAL = "--final" in sys.argv[1:]
 CHECK = "--check" in sys.argv[1:]
@@ -196,58 +194,16 @@ def update_validation(rows):
     replace_block(PAPER_DATA / "validation_table_main.tex", main_)
 
 
-def freeciv_run_records():
-    """Per model: display name and reasoning setting, from models_v1.csv."""
-    fc = pd.read_csv(MODELS_FILE)
-    assert len(fc) == 24, len(fc)
-    fc["dname"] = fc["name"].map(display_name)
-
-    def setting(row):
-        mode = row["reasoning_mode"]
-        if mode == "effort":
-            return row["effort"]
-        if mode == "budget":
-            return f"budget {int(row['budget']):,}"
-        if mode in ("none", "disabled"):
-            return "none" if mode == "none" else "disabled"
-        raise ValueError(mode)
-
-    fc["setting"] = fc.apply(setting, axis=1)
-    return fc.set_index("dname")
-
-
-def update_roster(fc):
-    path = PAPER_DATA / "roster_table.tex"
-    old = path.read_text()
-    lines = read_lines(path)
-    hcells = cells_of(next(l for l in lines if l.startswith("Model &")))
-    col = hcells.index("FreeCiv")
-    seen = 0
-    for i, l in enumerate(lines):
-        if not l.rstrip().endswith("\\\\") or l.startswith("Model &"):
-            continue
-        c = cells_of(l)
-        nm = c[0].replace("\\_", "_")
-        if nm in fc.index:
-            c[col] = tex(fc.loc[nm, "setting"])
-            lines[i] = join_cells(c)
-            seen += 1
-    assert seen == 24, seen
-    write_lines(path, lines, old)
-
-
 def main():
     rows = validation_rows()
-    fc = freeciv_run_records()
     w = load_wide()
     update_validation(rows)
-    update_roster(fc)
     cap = load_capability()
     both = cap.dropna()
     rng = np.random.default_rng(SEED)
     out = dict(generated=str(date.today()), script="forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/update_shared_tables.py", seed=SEED, n_boot=N_BOOT,
                final=FINAL, sources={"wide": rel(WIDE), "score_items": rel(SCORE_ITEMS),
-                                     "models_file": rel(MODELS_FILE), "run": RUN},
+                                     "run": RUN},
                sign_convention="rho between the capability score and (-1 x score); positive = more capable models score better",
                model_bootstrap=f"percentile bootstrap over the (capability, score) model pairs, {N_BOOT:,} resamples, "
                                f"numpy default_rng({SEED}) re-seeded per row and axis",
@@ -255,9 +211,7 @@ def main():
                                  "score_items over the items of the drawn worlds (with multiplicity), then Spearman rho",
                eci_vs_fb_spearman=spearman_stats(both.eci.values, both.fb.values, rng),
                rows=rows,
-               run=dict(models=24, total_calls=int(w["total_calls"].sum()), total_cost_usd=float(w["total_cost_usd"].sum()),
-                        per_model={n: dict(setting=r["setting"])
-                                   for n, r in fc.iterrows()}))
+               run=dict(models=24, total_calls=int(w["total_calls"].sum()), total_cost_usd=float(w["total_cost_usd"].sum())))
     if not CHECK:
         (DATA / "freeciv_validation_stats.json").write_text(json.dumps(out, indent=1, default=float))
         print("wrote", rel(DATA / "freeciv_validation_stats.json"))

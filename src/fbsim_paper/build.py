@@ -26,13 +26,6 @@ def uncommitted(paper):
     out = subprocess.run(['git', '-C', str(paper), 'status', '--porcelain', '--', 'data', 'figures'], capture_output=True, text=True, check=True)
     return out.stdout.splitlines()
 
-def install(src, paper, names):
-    """A step that copies files a script wrote to `src` into the manuscript, at the given paths."""
-    def copy():
-        for name, dest in names: shutil.copyfile(src/name, paper/dest/name)
-    copy.__name__ = 'install ' + ', '.join(name for name, _ in names)
-    return copy
-
 def _commands(step, data, paper, tmp):
     """(env, commands) for a step; a command is an argv list or a callable."""
     py = sys.executable
@@ -51,8 +44,7 @@ def _commands(step, data, paper, tmp):
     return _env(tmp), [
         [py, str(S/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
          '--audit-root', str(data/'datasets/starsim-audit/production_v1'), '--out', str(tmp/'generated')],
-        [py, str(S/'build_metadata.py'), '--paper-root', str(paper), '--csv', str(paper/'data/starsim/starsim_excess_long.csv'), '--out', str(tmp/'metadata')],
-        install(tmp/'metadata', paper, [('roster_table.tex', 'data')])]
+        [py, str(ASSETS/'combined'/'make_roster_table.py'), '--paper-root', str(paper)]]
 
 def run(steps, data, paper, allow_dirty=False):
     unknown = set(steps) - set(STEPS)
