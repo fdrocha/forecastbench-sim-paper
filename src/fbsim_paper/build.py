@@ -40,7 +40,8 @@ def _commands(step, data, paper, tmp):
             [py, str(A/'effort_check_report.py'), str(results/FREECIV_RUN), str(results/'run2_effort'), str(results/'run2b_2026-09-20/batched'),
              '--run1', str(results/'run1_2026-09-09'), '--out', str(paper/'data/freeciv/freeciv_effort_check.json')],
             [py, str(A/'validation_stats.py'), '--paper-root', str(paper)],
-            [py, str(A/'make_freeciv_figs.py'), '--paper-root', str(paper)]]
+            [py, str(A/'make_freeciv_figs.py'), '--paper-root', str(paper)],
+            [py, str(A/'make_freeciv_macros.py'), '--paper-root', str(paper)]]
     if step == 'starsim':
         analysis = analysis_root(data, tmp/'analysis')
         return _env(tmp), [[py, str(ASSETS/'starsim'/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
