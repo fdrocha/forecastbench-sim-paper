@@ -3,9 +3,10 @@
 
     python src/fbsim_paper/assets/freeciv/make_freeciv_macros.py --paper-root PAPER
 
-Run after validation_stats.py, make_freeciv_tables.py and make_freeciv_figs.py: it reads their JSON files in
-data/freeciv/ and checks its own numbers against them.  Writes data/freeciv_macros.tex and
-data/freeciv/freeciv_prose_numbers.json.
+Run after validation_stats.py, make_freeciv_tables.py, make_freeciv_figs.py and selection_weights.py: it reads their
+files in data/freeciv/ and checks its own numbers against them.  Writes data/freeciv_macros.tex and
+data/freeciv/freeciv_prose_numbers.json, and the appendix's comparison of the mid-range results under equal and
+selection weights (data/appendix_tables/freeciv_selection_weights.tex).
 """
 import json
 from datetime import date
@@ -14,8 +15,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-from _common import (DATA, PAPER_DATA, RUN, SCORE_ITEMS, SHORT, load_capability, load_items, load_wide, models_by_eci,
-                     rel, spearman_signed)
+from _common import (DATA, PAPER_DATA, RUN, SCORE_ITEMS, SHORT, TABLES, load_capability, load_items, load_wide,
+                     models_by_eci, rel, spearman_signed, write_tabular)
 
 HZ = [90, 120, 150, 180, 210]
 WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
@@ -30,6 +31,17 @@ def decompose(f, q):
     mf, mq = f.mean(), q.mean()
     return dict(bias2=(mf - mq) ** 2, var_f=((f - mf) ** 2).mean(), var_q=((q - mq) ** 2).mean(),
                 cov2=2 * ((f - mf) * (q - mq)).mean(), total=((f - q) ** 2).mean())
+
+
+def wavg(x, w):
+    return float(np.average(np.asarray(x, float), weights=np.asarray(w, float)))
+
+
+def wcorr(x, y, w):
+    """Weighted Pearson correlation."""
+    x, y, w = (np.asarray(v, float) for v in (x, y, w))
+    mx, my = wavg(x, w), wavg(y, w)
+    return float(wavg((x - mx) * (y - my), w) / np.sqrt(wavg((x - mx) ** 2, w) * wavg((y - my) ** 2, w)))
 
 
 def kl_bits(q, p):
@@ -58,6 +70,10 @@ def signed2(x):
 
 def pct(x):
     return f"{100 * x:.0f}\\%"
+
+
+def rho_ci(rho, ci):
+    return f"{f2(rho)} [{f2(ci[0])}, {f2(ci[1])}]"
 
 
 items = load_items()
@@ -158,6 +174,38 @@ M.update({
     "FCMidWorstItems": str(N["midrange"]["worst_items"]), "FCMidWorstShare": pct(N["midrange"]["worst_loss_share"]),
     "FCMidMeanQ": f3(N["midrange"]["mean_q"]),
 })
+
+# ---------------------------------------------------------------- mid-range under selection weights (appendix)
+W = pd.read_csv(DATA / "freeciv_selection_weights.csv").set_index("item").w
+assert set(W.index) == set(uq.item) and abs(W.sum() - 750) < 1e-9
+gw = b.assign(w=b.item.map(W)).groupby("model")
+ex_w = gw.apply(lambda d: wavg(d.excess_brier, d.w), include_groups=False).reindex(models)
+disc_w = gw.apply(lambda d: wcorr(d.p, d.q, d.w), include_groups=False).reindex(models)
+rho_w, p_w, ci_w, _ = spearman_signed(eci.values, ex_w.values)
+rho_disc_w, p_disc_w, ci_disc_w, _ = spearman_signed(eci.values, disc_w.values, lower_is_better=False)
+bias_share_w = np.mean([(wavg(d.p, d.w) - wavg(d.q, d.w)) ** 2 for _, d in gw]) / ex_w.mean()   # as dec.bias2 / dec.total
+N["selection_weights"] = d = dict(
+    weights=rel(DATA / "freeciv_selection_weights.csv"), mean_over_models=float(ex_w.mean()), per_model=ex_w.to_dict(),
+    eci=dict(rho=rho_w, ci=ci_w, p=p_w), rank_corr_equal=float(spearmanr(ex, ex_w)[0]), max_rank_move=int((ex.rank() - ex_w.rank()).abs().max()),
+    flat_0p5=wavg((0.5 - uq.q) ** 2, uq.item.map(W)), mean_q=wavg(uq.q, uq.item.map(W)), bias_share=float(bias_share_w),
+    discrimination=dict(rho_eci=rho_disc_w, ci=ci_disc_w, p=p_disc_w), effective_items=float(W.sum() ** 2 / (W ** 2).sum()))
+d["models_below_flat"] = int((ex_w < d["flat_0p5"]).sum())
+# what the appendix says in words: the headline numbers barely move, the q-mix-sensitive ones move more
+assert abs(d["mean_over_models"] - ex.mean()) < 0.01 and abs(rho_w - e["rho"]) < 0.05 and d["rank_corr_equal"] > 0.95, \
+    "the appendix says weighting leaves the mean score, the ECI correlation and the ranking nearly unchanged"
+assert d["bias_share"] < dec.bias2 / dec.total, "the appendix says squared bias is a smaller share of the excess under the weights"
+assert d["flat_0p5"] > flat and d["models_below_flat"] == 0, "the appendix says constant 0.5 scores worse under the weights but still beats every model"
+assert rho_disc_w < rho_disc, "the appendix says the discrimination correlation with ECI is weaker under the weights"
+write_tabular(TABLES / "freeciv_selection_weights.tex", "@{}lrr@{}", [" & Equal weights & Selection weights"], [
+    ["Mean excess Brier over models", f3(ex.mean()), f3(d["mean_over_models"])],
+    [r"$\rho$ with ECI [95\% CI]", rho_ci(e["rho"], e["ci"]), rho_ci(rho_w, ci_w)],
+    ["Rank correlation with equal weights", "---", f2(d["rank_corr_equal"])],
+    ["Constant 0.5, excess Brier", f3(flat), f3(d["flat_0p5"])],
+    ["Squared bias, share of excess Brier", pct(dec.bias2 / dec.total), pct(d["bias_share"])],
+    [r"Discrimination: $\rho$ with ECI [95\% CI]", rho_ci(rho_disc, [disc_lo, disc_hi]), rho_ci(rho_disc_w, ci_disc_w)],
+    [r"Mean $q$", f3(uq.q.mean()), f3(d["mean_q"])],
+], tabcolsep="4pt", comment="The 750 mid-range questions with equal weights and with the selection weights of freeciv_selection_weights.csv.",
+    script="make_freeciv_macros.py")
 
 # ---------------------------------------------------------------- tails
 t = items[items.set == "tails"].copy()

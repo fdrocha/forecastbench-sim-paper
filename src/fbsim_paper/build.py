@@ -10,6 +10,7 @@ STEPS = ['micropolis', 'freeciv', 'starsim', 'combined']
 INPUTS = 'datasets/paper-inputs'
 FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
 FREECIV_RUN = 'run2_paper'
+FREECIV_FRACTIONS = 'datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1/sets/draw_v1/selection_fractions_bank_tails_mirrors.json'
 
 def stage(inputs, paper):
     """Copy each file of paper-inputs to the same path under the manuscript's data/, if its content differs."""
@@ -43,6 +44,8 @@ def _commands(step, data, paper, tmp):
              '--run1', str(results/'run1_2026-09-09'), '--out', str(paper/'data/freeciv/freeciv_effort_check.json')],
             [py, str(A/'validation_stats.py'), '--paper-root', str(paper)],
             [py, str(A/'make_freeciv_figs.py'), '--paper-root', str(paper)],
+            [py, str(A/'selection_weights.py'), '--sets', str(src/'sets/draw_v1'), '--fractions', str(data/FREECIV_FRACTIONS),
+             '--out', str(paper/'data/freeciv/freeciv_selection_weights.csv')],
             [py, str(A/'make_freeciv_macros.py'), '--paper-root', str(paper)]]
     if step == 'starsim':
         analysis = analysis_root(data, tmp/'analysis')
