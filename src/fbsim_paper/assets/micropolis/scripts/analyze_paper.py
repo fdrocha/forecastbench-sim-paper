@@ -44,13 +44,10 @@ And to data/micropolis/paper/:
 - micropolis_model_scores.csv        the three cells the combined score fits
 
 fig_micropolis_capability.pdf is the one figure here the article places, so
---no-extra keeps drawing it. Three ECI scatters side by side — continuous,
-tail, binary, in the order fbs-paper's fig_freeciv_capability.pdf lays its
-four out — styled on that figure so the two worlds' capability figures read as
-a pair: 5.5 x 2.04in at the paper's own \\textwidth, text set by LaTeX in
-Computer Modern, dark-green points with the best and worst model named in
-orange, and no legend, which at 26 models would be wider than the panel it
-explains.
+--no-extra keeps drawing it. Three ECI scatters side by side — mid-range,
+tail, continuous, in the order fbs-paper's fig_freeciv_capability.pdf lays its
+four out — drawn by fbsim_paper.capability_plot, which draws that figure too, so
+the two worlds' capability figures read as a pair.
 
 Every interval the article quotes for this world is a percentile bootstrap
 over the models, which is what would have to generalize for a claim about
@@ -122,6 +119,8 @@ from micropolis_world import model_scores
 from micropolis_world.continuous_eval import MdReport
 from micropolis_world.model_scores import eci_of, fb_by_name
 
+from fbsim_paper import capability_plot
+
 sys.path.insert(0, str(Path(__file__).parent))
 import analyze_binary
 from analyze_binary import (
@@ -178,15 +177,9 @@ EXTRA_SUBDIR = "extra"
 
 CAPABILITY_FIG_NAME = "fig_micropolis_capability.pdf"
 
-# fbs-paper's \textwidth is 5.5in exactly (iclr2027_conference.sty), and
-# figures/fig_freeciv_capability.pdf is 5.5 x 2.04in. Matching it means the two
-# worlds' capability figures set at the same size with no \includegraphics
-# scaling, so their fonts come out the same size on the page.
-CAPABILITY_SIZE = (5.5, 2.04)
-
-# The FreeCiv figure's own palette, read off its PDF: a near-black green for
-# the models and an orange for the best and worst.
-POINT_COLOR = "#102b23"
+# The figures' palette: the capability figure's near-black green for the
+# models, and an orange for highlights.
+POINT_COLOR = capability_plot.POINT_COLOR
 EXTREME_COLOR = "#e8632c"
 
 MACROS_NAME = "micropolis-macros.tex"
@@ -471,9 +464,9 @@ class Headline:
 # the article places them near each other. `label` is the word the panel
 # caption prints; the macros keep their "Binary" stem for the mid-range slice.
 PANELS = [
-    ("Continuous", "eci_vs_excess_ncrps-city", "Excess nCRPS"),
-    ("Tail", "eci_vs_excess_bits-tail", "Excess bits"),
     ("Mid-range", "eci_vs_excess_brier-mid-range", "Excess Brier"),
+    ("Tail", "eci_vs_excess_bits-tail", "Excess bits"),
+    ("Continuous", "eci_vs_excess_ncrps-city", "Excess nCRPS"),
 ]
 
 # The ones the article quotes. The mid-range slice is named "Binary" and the
@@ -974,16 +967,12 @@ def adjusted_band(ci: tuple[float, float] | None) -> tuple[float, float] | None:
 def draw_capability_figure(
     path: Path,
     found: dict[str, object],
-    names: dict[str, str],
     model_bands: dict[str, tuple],
 ) -> Path | None:
     """The article's capability figure: three ECI scatters side by side.
 
-    Styled on fbs-paper's figures/fig_freeciv_capability.pdf, so the two
-    worlds' capability figures can sit near each other and read as one pair:
-    the same 5.5 x 2.04in at the paper's \textwidth, the same Computer Modern
-    through LaTeX, the same dark-green points with the best and worst model in
-    orange, the same "(a) ..." panel captions under the axes, and rho sign-
+    Drawn by fbsim_paper.capability_plot, as FreeCiv's fig_freeciv_capability.pdf
+    is, so the two worlds' capability figures read as one pair; rho is sign-
     adjusted so positive means more capable models forecast better.
 
     Unlike the figures/extra/ scatters this does not go through the reports'
@@ -999,14 +988,6 @@ def draw_capability_figure(
     and over cities are still computed and still have macros, but the
     article does not quote them.
     """
-    import matplotlib
-
-    # pgf rather than Agg: the text is set by LaTeX itself, which is what puts
-    # the figure in the paper's own Computer Modern instead of a sans-serif
-    # approximation of it.
-    matplotlib.use("pgf")
-    import matplotlib.pyplot as plt
-
     missing = [name for name, fig, _ in PANELS if found.get(fig) is None]
     if missing:
         print(
@@ -1014,27 +995,8 @@ def draw_capability_figure(
         )
         return None
 
-    with plt.rc_context(
-        {
-            "pgf.texsystem": "pdflatex",
-            "text.usetex": True,
-            "font.family": "serif",
-            # Let LaTeX pick the fonts rather than matplotlib naming them, so
-            # the result is the document's Computer Modern.
-            "pgf.rcfonts": False,
-            "font.size": 7,
-            "axes.labelsize": 7,
-            "xtick.labelsize": 6.5,
-            "ytick.labelsize": 6.5,
-            "axes.linewidth": 0.6,
-            "xtick.major.width": 0.6,
-            "ytick.major.width": 0.6,
-            "xtick.major.size": 2.0,
-            "ytick.major.size": 2.0,
-        }
-    ):
-        fig, axes = plt.subplots(1, 3, figsize=CAPABILITY_SIZE, layout="constrained")
-        fig.get_layout_engine().set(w_pad=0.04, h_pad=0.02, wspace=0.02)
+    with capability_plot.style():
+        fig, axes = capability_plot.figure(len(PANELS))
         for i, (ax, (name, figname, ylabel)) in enumerate(zip(axes, PANELS)):
             letter = chr(ord("a") + i)
             _draw_panel(
@@ -1043,15 +1005,12 @@ def draw_capability_figure(
                 name,
                 ylabel,
                 letter,
-                names,
                 model_bands.get(figname),
             )
         path.parent.mkdir(parents=True, exist_ok=True)
-        # No bbox_inches="tight": the figure is sized to the paper's
-        # \textwidth exactly, and a tight box would grow it past that, so
-        # \includegraphics[width=\linewidth] would scale it back down and take
-        # the fonts with it. constrained layout fits the labels inside instead.
-        fig.savefig(path)
+        capability_plot.save(fig, path)
+        import matplotlib.pyplot as plt
+
         plt.close(fig)
     return path
 
@@ -1467,10 +1426,9 @@ def _draw_panel(
     name: str,
     ylabel: str,
     letter: str,
-    names: dict[str, str],
     band: tuple[float, float] | None,
 ) -> None:
-    """One panel: the models' (ECI, mean score), a fit line and the rho note.
+    """One panel: the models' (ECI, mean score), drawn by capability_plot.draw_panel.
 
     The per-model means come from `c.scores`, the ones the correlation itself
     used, so a point cannot sit somewhere the coefficient does not describe.
@@ -1480,93 +1438,19 @@ def _draw_panel(
     a panel cannot quietly show a different interval from the caption's; a
     missing band prints rho alone.
     """
-    import numpy as np
-
     points = sorted(
-        (eci_of(m), v, names.get(m, m.split("/")[-1]))
-        for m, v in c.scores.items()
-        if eci_of(m) is not None
+        (eci_of(m), v) for m, v in c.scores.items() if eci_of(m) is not None
     )
-    x = np.array([e for e, _, _ in points])
-    y = np.array([v for _, v, _ in points])
-
-    # Best and worst by score, in the reference's orange. Lower is better in
-    # every panel, so best is the minimum.
-    best = int(np.argmin(y))
-    worst = int(np.argmax(y))
-    colors = [POINT_COLOR] * len(points)
-    colors[best] = colors[worst] = EXTREME_COLOR
-    ax.scatter(x, y, s=7, c=colors, linewidths=0, zorder=3, clip_on=False)
-
-    # A least-squares line, as the reference draws: it shows the direction the
-    # rank correlation reports without claiming the fit is the estimate.
-    if len(points) > 1:
-        slope, intercept = np.polyfit(x, y, 1)
-        xs = np.array([x.min(), x.max()])
-        ax.plot(xs, slope * xs + intercept, color="0.72", lw=0.6, zorder=1)
-
-    # Headroom for the rho note, which sits top-left: without it the note
-    # lands on whichever model is worst at the low-ECI end.
-    lo, hi = min(y), max(y)
-    ax.set_ylim(lo - 0.13 * (hi - lo), hi + 0.26 * (hi - lo))
-    label_models(ax, points, best, worst)
-
-    note = f"$\\rho = {adjusted(c.rho):.2f}$"
-    if band:
-        note += f" $[{band[0]:.2f}, {band[1]:.2f}]$"
-    else:
+    if not band:
         print(f"[warn] {name} panel: no model interval, drawing rho alone")
-    ax.text(
-        0.03,
-        0.955,
-        note,
-        transform=ax.transAxes,
-        fontsize=6,
-        color=POINT_COLOR,
-        va="top",
-        ha="left",
+    capability_plot.draw_panel(
+        ax,
+        [e for e, _ in points],
+        [v for _, v in points],
+        capability_plot.rho_note(adjusted(c.rho), band),
+        ylabel,
+        f"({letter}) {name}",
     )
-
-    ax.set_ylabel(ylabel)
-    ax.spines[["top", "right"]].set_visible(False)
-    # "ECI" then the panel caption under it, as the reference sets them: two
-    # lines of one xlabel rather than an xlabel plus a title, so tight_layout
-    # reserves room for both and the caption cannot land on the panel below.
-    ax.set_xlabel(f"ECI\n\\textrm{{({letter}) {name}}}")
-
-
-def label_models(ax, points: list[tuple], best: int, worst: int) -> None:
-    """Name the best and worst model beside their points.
-
-    A 26-entry legend is wider than a 1.8in panel, so the figure names only
-    the two models a reader looks for, the way the reference figure's orange
-    pair does. Labeling the middle of the ranking was tried and dropped: at
-    5pt the names of models whose scores differ by a percent land on each
-    other and on the tick labels, and the figure's claim is the trend, not the
-    identity of every point.
-
-    Each label is placed on the side away from the data, and vertically away
-    from the fit line, so it cannot sit on the line or the axis.
-    """
-    xs = [p[0] for p in points]
-    xlo, xhi = min(xs), max(xs)
-    xr = (xhi - xlo) or 1.0
-    for i, below in ((best, True), (worst, False)):
-        eci, value, label = points[i]
-        right = (eci - xlo) / xr > 0.5
-        ax.annotate(
-            label,
-            (eci, value),
-            textcoords="offset points",
-            # The best model is at the bottom of the panel and the worst at
-            # the top, so pushing each further that way clears the cloud.
-            xytext=(-4.5 if right else 4.5, -5.0 if below else 3.0),
-            ha="right" if right else "left",
-            va="top" if below else "bottom",
-            fontsize=5.4,
-            color=EXTREME_COLOR,
-            annotation_clip=False,
-        )
 
 
 def macro_band(ci: tuple[float, float] | None) -> str:
@@ -4761,7 +4645,6 @@ def main() -> None:
     capability = draw_capability_figure(
         args.outdir / CAPABILITY_FIG_NAME,
         found,
-        names,
         model_bands_by_figure(found),
     )
 
