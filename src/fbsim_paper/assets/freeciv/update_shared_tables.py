@@ -164,6 +164,8 @@ def validation_rows():
 # ---------------------------------------------------------------- the tables
 def update_validation(rows):
     def replace_block(path, make_cells):
+        if not path.is_file():   # the manuscript reads hand-frozen copies since the 2026-09-24 code freeze
+            return
         old = path.read_text()
         lines = read_lines(path)
         # locate the FreeCiv block: the row whose first cell holds a multirow with FreeCiv, plus the three rows after it

@@ -1,14 +1,16 @@
 """Table of the latent skill theta and each model's rank on every cell of the combined score.
 Rank 1 is the lowest loss; ties share the average rank. The combined rank ranks the mean of a model's
 cell ranks, over the cells it has. Also writes the Spearman correlations between theta and every cell, and
-between every pair of cells, to rank_correlation_table.tex. Standard library only; run from anywhere:
-    python3 data/scripts/make_rank_table.py
+between every pair of cells, to rank_correlation_table.tex. Standard library only:
+    python3 make_rank_table.py --paper-root PAPER
 """
-import csv, json
+import argparse, csv, json
 from datetime import date
 from pathlib import Path
 
-DATA = Path(__file__).resolve().parents[1]
+ap = argparse.ArgumentParser(description=__doc__)
+ap.add_argument("--paper-root", type=Path, required=True)
+DATA = ap.parse_args().paper_root.resolve() / "data"
 OUT = DATA / "rank_table.tex"
 NAMES = {r["model"]: r["short_name"] for r in csv.DictReader(open(DATA / "model_names.csv"))}
 THETA = json.load(open(DATA / "combined_score.json"))["theta"]

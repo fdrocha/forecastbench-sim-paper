@@ -1,7 +1,7 @@
 [
   {
     "source": "data/datasets/paper-f214afe3/data/scripts/paper_roster.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/scripts/paper_roster.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/combined/paper_roster.py",
     "source_sha256": "2de29972bed0a46081193002519dc997ef57e979328df1d42aa368e5dca9a7ff",
     "sha256": "2de29972bed0a46081193002519dc997ef57e979328df1d42aa368e5dca9a7ff",
     "mode": "verbatim",
@@ -9,55 +9,55 @@
   },
   {
     "source": "data/datasets/paper-f214afe3/data/scripts/make_rank_table.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/scripts/make_rank_table.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/combined/make_rank_table.py",
     "source_sha256": "7eabde81e4028854f850e4b619fc905c6c9457692527766c6dbcd3053e6bb20c",
-    "sha256": "7eabde81e4028854f850e4b619fc905c6c9457692527766c6dbcd3053e6bb20c",
-    "mode": "verbatim",
+    "sha256": "87557aaa1e1f858287a80d4495dfe57bf1eb25eb305ece77874ba795df4b7af5",
+    "mode": "takes --paper-root instead of locating the manuscript from its own path; remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
     "source": "data/datasets/paper-f214afe3/data/scripts/combined_score.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/scripts/combined_score.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/combined/combined_score.py",
     "source_sha256": "2fb8f461caf99b56df8542390c5a75b8385b689aeaf1be14141f149664336766",
-    "sha256": "2fb8f461caf99b56df8542390c5a75b8385b689aeaf1be14141f149664336766",
-    "mode": "verbatim",
+    "sha256": "cccd21e1676bfbaff74aee07161c3543f6fcb885fac0b8dec6c5f1c5282f0117",
+    "mode": "updated from the manuscript at 2e57585 (US date wording in the table comment); --paper-root required instead of defaulting to the script's manuscript checkout; remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
     "source": "data/datasets/paper-f214afe3/data/scripts/plot_combined_score.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/scripts/plot_combined_score.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/combined/plot_combined_score.py",
     "source_sha256": "763073b79d3612fc92fc65a4a9b248fa38027785cd758f42d39644a3af564ddf",
-    "sha256": "763073b79d3612fc92fc65a4a9b248fa38027785cd758f42d39644a3af564ddf",
-    "mode": "verbatim",
+    "sha256": "c23a30ffafb7bb935b247ab609736a572a1b3615388db3ec598ba58c4c3c3aa6",
+    "mode": "--paper-root required; --combined and --out-dir default inside it; remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
     "source": "data/datasets/paper-f214afe3/data/starsim/scripts/install_outputs.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/install_outputs.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/install_outputs.py",
     "source_sha256": "f62c2dc648b6c4424442d3c23de3a052e255d6391eb762be02cbfa5bd6d9c4d9",
-    "sha256": "f62c2dc648b6c4424442d3c23de3a052e255d6391eb762be02cbfa5bd6d9c4d9",
-    "mode": "verbatim",
+    "sha256": "a0ff274f0b9808025f98bef47a1b64000d8c28c31c11f63039fb9374f095e16e",
+    "mode": "--paper-root required instead of defaulting to the script's manuscript checkout; remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
     "source": "data/datasets/paper-f214afe3/data/starsim/scripts/build_metadata.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/build_metadata.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/build_metadata.py",
     "source_sha256": "74dde5ac866c28fcc2f1613c3194880f8cda4c1382677a24be697a15dfaa0c13",
-    "sha256": "74dde5ac866c28fcc2f1613c3194880f8cda4c1382677a24be697a15dfaa0c13",
-    "mode": "verbatim",
+    "sha256": "38ba0221cc462ff2097be24b51f754e420f07faca9bdebe701dd35ff8b6f41d3",
+    "mode": "--paper-root required instead of defaulting to the script's manuscript checkout; remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
     "source": "data/datasets/paper-f214afe3/data/starsim/scripts/integrate_fixed_state.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/integrate_fixed_state.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/integrate_fixed_state.py",
     "source_sha256": "e03a4d9d625bf4b2dc55f2f623ed53961be54e6ca97098d18cf05ea86b63ad1c",
-    "sha256": "e03a4d9d625bf4b2dc55f2f623ed53961be54e6ca97098d18cf05ea86b63ad1c",
-    "mode": "verbatim",
+    "sha256": "f8d87c17d0f883b12fa86aafae5203487e7014dbe30f11784627a8c3ac3edd0c",
+    "mode": "finds its helper scripts next to itself instead of inside --paper-root; skips validation tables absent from the manuscript (hand-frozen copies since the 2026-09-24 code freeze); remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
     "source": "data/datasets/paper-f214afe3/data/starsim/scripts/paths.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/paths.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/paths.py",
     "source_sha256": "3eada0cb667ad632c55b8615f80d312f5e12fdd5e0057cfdf92f22adacb4b2c4",
     "sha256": "3eada0cb667ad632c55b8615f80d312f5e12fdd5e0057cfdf92f22adacb4b2c4",
     "mode": "verbatim",
@@ -65,42 +65,26 @@
   },
   {
     "source": "data/datasets/paper-f214afe3/data/starsim/scripts/build_excess_extra.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/build_excess_extra.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/build_excess_extra.py",
     "source_sha256": "48d46655b855641a1ac8ed5c6717df75893b87a3f66bfe0123d5a129a93e3a07",
     "sha256": "48d46655b855641a1ac8ed5c6717df75893b87a3f66bfe0123d5a129a93e3a07",
     "mode": "verbatim",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
-    "source": "data/datasets/paper-f214afe3/data/starsim/scripts/apply_edits2.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/apply_edits2.py",
-    "source_sha256": "198a35c607b80f798ae5dd56073f8c9817877ee2658b57abd8703473dd59e283",
-    "sha256": "198a35c607b80f798ae5dd56073f8c9817877ee2658b57abd8703473dd59e283",
-    "mode": "verbatim",
-    "access": "public source under LICENSE; external input data excluded"
-  },
-  {
     "source": "data/datasets/paper-f214afe3/data/starsim/scripts/build_excess.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/build_excess.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/build_excess.py",
     "source_sha256": "df8d361726f8ae5231ffaedf76951e1ed217f96d98fa35aff94a0bdaccfe8dbd",
-    "sha256": "ad8940aaf07c939b675afa62a2d7db072afabf26c1bbb33b484c151ab8ddbcf9",
-    "mode": "imports pinned benchmark crps5/kl_bits; remaining source unchanged",
-    "access": "public source under LICENSE; external input data excluded"
-  },
-  {
-    "source": "data/datasets/paper-f214afe3/data/starsim/scripts/apply_edits.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/apply_edits.py",
-    "source_sha256": "198a35c607b80f798ae5dd56073f8c9817877ee2658b57abd8703473dd59e283",
-    "sha256": "198a35c607b80f798ae5dd56073f8c9817877ee2658b57abd8703473dd59e283",
-    "mode": "verbatim",
+    "sha256": "7c6e99ae1defccb34f0aa762f4c07991e73da06ea7c1b7c493949a27e4e304bd",
+    "mode": "updated from the manuscript at 2e57585 (the 42465af sign correction, rho(ECI, -loss)); imports pinned benchmark crps5/kl_bits; remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
     "source": "data/datasets/paper-f214afe3/data/starsim/scripts/check_tex.py",
-    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/paper/data/starsim/scripts/check_tex.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/check_tex.py",
     "source_sha256": "bfaa4f1b5c69051ea8359d3190630e965b11aa7cc3b68cc330082960afb5d8ae",
-    "sha256": "bfaa4f1b5c69051ea8359d3190630e965b11aa7cc3b68cc330082960afb5d8ae",
-    "mode": "verbatim",
+    "sha256": "74fadfe7464ceb9a4f2705deaad14c1c0d1bfe2ed40d66c8fbe0a2acb0457ecf",
+    "mode": "--paper-root required instead of defaulting to the script's manuscript checkout; remaining source unchanged",
     "access": "public source under LICENSE; external input data excluded"
   },
   {
@@ -164,7 +148,7 @@
     "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/update_shared_tables.py",
     "source_sha256": "03fec1c45b843cf99333914cb782175a65f5c02e8e0e35f0a8e18240d2a04542",
     "destination_sha256": "03fec1c45b843cf99333914cb782175a65f5c02e8e0e35f0a8e18240d2a04542",
-    "change": "Unchanged paper generator"
+    "change": "Paper generator; skips validation tables absent from the manuscript (hand-frozen copies since the 2026-09-24 code freeze)"
   },
   {
     "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/paper/make_freeciv_tables.py",
@@ -199,7 +183,7 @@
     "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/freeciv/deliver_backing.py",
     "source_sha256": "bfea92486c824e8fbff09eb97d82396685d88cd74e8a95d46ce914a32fd34264",
     "destination_sha256": "bfea92486c824e8fbff09eb97d82396685d88cd74e8a95d46ce914a32fd34264",
-    "change": "Unchanged paper generator"
+    "change": "Paper generator; its README text follows the manuscript's hand-edited copy at 2e57585 (four more rows, mid-range wording)"
   },
   {
     "source": "forecastbench-sim/worlds/freeciv/fbsim_v3/paper/make_freeciv_difficulty_table.py",
@@ -452,5 +436,13 @@
     "source_sha256": "fa31a71707106f61e0f3f20b6427f2ff07ac646c8f269093647020dab7864a9a",
     "destination_sha256": "fa31a71707106f61e0f3f20b6427f2ff07ac646c8f269093647020dab7864a9a",
     "change": "Unchanged run-2 analysis script from freeciv-v3 daca5a15; imports score_v1 from forecastbench-sim worlds/freeciv/fbsim_v3/run (put that folder on PYTHONPATH); not wired into fbsim_paper commands"
+  },
+  {
+    "source": "fbs-paper-overleaf@2e57585d7ab60df87c8440448c226469ae6b0486:data/starsim/scripts/render_score_correlations.py",
+    "destination": "homes/forecastbench-sim-paper/src/fbsim_paper/assets/starsim/render_score_correlations.py",
+    "source_sha256": "e350ab53780832d34ee39f12284405395e4894188ab40200bb6e8ccfeb8b992e",
+    "sha256": "e350ab53780832d34ee39f12284405395e4894188ab40200bb6e8ccfeb8b992e",
+    "mode": "verbatim",
+    "access": "public source under LICENSE; external input data excluded"
   }
 ]

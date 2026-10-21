@@ -32,7 +32,7 @@
     },
     {
       "id": "validate",
-      "command": "python -m fbsim_paper validate --data-root \"$DATA_ROOT\"",
+      "command": "python -m fbsim_paper validate --data-root \"$FBSIM_DATA_ROOT\"",
       "inputs": "external private data manifest and hashes",
       "outputs": "validation JSON",
       "schema_version": "1",
@@ -45,7 +45,7 @@
     },
     {
       "id": "cached-reproduction",
-      "command": "python -m fbsim_paper reproduce --data-root \"$DATA_ROOT\" --output \"$NEW_OUTPUT\"",
+      "command": "python -m fbsim_paper reproduce --data-root \"$FBSIM_DATA_ROOT\" --output \"$NEW_OUTPUT\"",
       "inputs": "f214afe3 snapshot, retained calls, accepted fixed-state production/rescore artifacts",
       "outputs": "disposable paper/analysis tree, regenerated scores/figures, verification.json",
       "schema_version": "legacy preserved + manifest v1",
@@ -80,6 +80,19 @@
       "cost_usd": 0,
       "network": false,
       "side_effects": "new output directory only",
+      "production": false
+    },
+    {
+      "id": "build",
+      "command": "fbsim-paper build [micropolis] [freeciv] [starsim]",
+      "inputs": "$FBSIM_DATA_ROOT/datasets/paper-inputs, cached Starsim/FreeCiv archive folders, this checkout's scripts",
+      "outputs": "generated tables, figures, macros and data files in the manuscript checkout ($FBSIM_PAPER_ROOT)",
+      "schema_version": "1",
+      "access": "public code; restricted inputs required",
+      "runtime": "about 2 minutes for all steps; no engine runs",
+      "cost_usd": 0,
+      "network": false,
+      "side_effects": "overwrites generated files in the manuscript checkout (refused if it has uncommitted changes there, unless --allow-dirty); review with git there",
       "production": false
     }
   ],

@@ -9,7 +9,10 @@ license = "GPL-3.0-only"
 license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["fbsim-benchmark==0.3.0", "fbsim-core==0.1.0", "numpy==2.2.6", "scipy==1.15.3", "matplotlib==3.10.3", "pandas==2.3.3", "json5==0.14.0"]
+dependencies = ["fbsim-benchmark==0.3.0", "fbsim-core==0.1.0", "numpy==2.2.6", "scipy==1.16.3", "matplotlib==3.10.3", "pandas==2.3.3", "json5==0.14.0", "python-dotenv==1.2.4"]
+
+[project.scripts]
+fbsim-paper = "fbsim_paper.runner:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

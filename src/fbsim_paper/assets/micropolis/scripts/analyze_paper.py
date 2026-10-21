@@ -94,7 +94,8 @@ carries a ":loeff".
 
 When PAPER_REPO_PATH is set — it is, in worlds/micropolis/.env, which
 module_globals loads — the run ends by delivering into that checkout of the
-article: micropolis-macros.tex to its root, beside math_commands.tex, and
+article: micropolis-macros.tex to its data/, beside the other generated
+definitions, and
 every figure the article places to its figures/, the three appendix tables to
 its data/appendix_tables/, and every CSV in the paper's directory to its
 data/micropolis/ — the rows every number in the article was computed from.
@@ -428,9 +429,7 @@ HORIZON_WORDS = {"3y": "Hthree", "5y": "Hfive", "7y": "Hseven", "10y": "Hten"}
 # a machine that only gathers data, so its absence is a note and not an error.
 PAPER_REPO_ENV = "PAPER_REPO_PATH"
 
-# Inside the paper repo: the figures go where \includegraphics resolves them,
-# and the macros to the root, beside math_commands.tex, which is where the
-# article's other \input of definitions sits — \input{micropolis-macros.tex}.
+# Inside the paper repo: the figures go where \includegraphics resolves them.
 PAPER_REPO_FIGURES = "figures"
 
 # The prefix every macro carries, so a \\MPD in the article's source is

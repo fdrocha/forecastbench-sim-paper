@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from scipy.stats import spearmanr
 ap=argparse.ArgumentParser(); ap.add_argument('--paper-root',type=Path,required=True); ap.add_argument('--analysis-root',type=Path,required=True); ap.add_argument('--audit-root',type=Path,required=True); ap.add_argument('--out',type=Path,required=True); args=ap.parse_args()
+HERE=Path(__file__).resolve().parent; COMBINED=HERE.parent/'combined'
 P=args.paper_root.resolve(); A=args.analysis_root.resolve(); R=args.audit_root.resolve()/'rescore'; O=args.out.resolve(); O.mkdir(parents=True,exist_ok=True)
 read=lambda p:list(csv.DictReader(open(p)))
 def dump(p,x):p.write_text(json.dumps(x,indent=2,default=lambda v:v.item() if hasattr(v,'item') else str(v))+'\n')
@@ -21,7 +22,7 @@ for name in ['paper_fixed_state_long.csv','associations.csv','model_scores_ranks
 manifest={str(p.relative_to(cache)):hashlib.sha256(p.read_bytes()).hexdigest() for p in cache.iterdir() if p.is_file() and p.name not in {'input_manifest.json','HISTORICAL_README.md'}}
 dump(cache/'input_manifest.json',manifest)
 # Current scorer, with only continuous truth paths replaced; fixed historical scales.
-sys.argv=['integration','--analysis-root',str(A)]; sys.path.insert(0,str(P/'data/starsim/scripts'))
+sys.argv=['integration','--analysis-root',str(A)]; sys.path.insert(0,str(HERE))
 import build_excess as be
 be.use_cached_runs(be.bt,A/'results/causal/rerun_lowest')
 for s,src in list(be.bt.SOURCES.items()):
@@ -49,13 +50,15 @@ def audit_rho(pts,*a,**kw):
  return saved_rho(pts,*a,**kw)
 be.fg.rho_ci=audit_rho
 be.fig_unconditional(long,O,C);be.fig_interventional(long,O);be.per_item_table(pi,O,C)
-sys.argv=['extra','--analysis-root',str(A),'--out',str(O)];runpy.run_path(str(P/'data/starsim/scripts/build_excess_extra.py'),run_name='__main__')
+sys.argv=['extra','--analysis-root',str(A),'--out',str(O)];runpy.run_path(str(HERE/'build_excess_extra.py'),run_name='__main__')
 for n,dest in {'starsim_excess_long.csv':'data/starsim/starsim_excess_long.csv','per_item_table.tex':'data/starsim/per_item_table.tex','per_item_table.json':'data/starsim/per_item_table.json',**{n+'.tex':'data/appendix_tables/'+n+'.tex' for n in ['starsim_models','starsim_horizon','starsim_rung_horizon']},**{n+'.'+ext:'figures/'+n+'.'+ext for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon'] for ext in ['pdf','png']}}.items():shutil.copy2(O/n,P/dest)
 for p in (P/'data/appendix_tables').glob('starsim*.tex'):
  t=p.read_text().replace('five elicited quantiles p10..p90 vs the matched replay seeds','five elicited quantiles p10..p90 vs fixed-state continuations').replace('(Nick, 2026-09-17)','via integrate_fixed_state.py (retrospective continuous rescore; binary unchanged)');p.write_text(t)
 val=json.loads((O/'validation_rows.json').read_text())
 for name,newrows in val['rows'].items():
- p=P/'data'/name; lines=p.read_text().splitlines()
+ p=P/'data'/name
+ if not p.is_file():continue  # the manuscript reads hand-frozen copies since the 2026-09-24 code freeze
+ lines=p.read_text().splitlines()
  hits=[i for i,l in enumerate(lines) if ('multirow{3}{*}{StarSim}' in l or 'multirow{3}{*}{Starsim}' in l or 'multirow{2}{*}{Starsim}' in l)];assert len(hits)==1
  start=hits[0]; count=2 if 'multirow{2}' in lines[start] else 3
  fixed=[r.replace('StarSim','Starsim') for r in newrows if 'Excess bits, binary' not in r]
@@ -75,8 +78,8 @@ for filename,indices in [('starsim_models.tex',[9]),('starsim_horizon.tex',[10,1
    lines[i]=' & '.join(parts)
  p.write_text('\n'.join(lines)+'\n')
 # Refit CURRENT combined definition: nine cells, full-precision excess nCRPS for FreeCiv.
-sys.path.insert(0,str(P/'data/scripts'));sys.argv=['combined','--paper-root',str(P),'--out',str(O/'combined_score.json')]
-g=runpy.run_path(str(P/'data/scripts/combined_score.py'),run_name='integration_import')
+sys.path.insert(0,str(COMBINED));sys.argv=['combined','--paper-root',str(P),'--out',str(O/'combined_score.json')]
+g=runpy.run_path(str(COMBINED/'combined_score.py'),run_name='integration_import')
 S=g['starsim']('excess'); cells={}
 for src in [g['MICRO'],S,g['FREE']]:
  for k in next(iter(src.values())):cells[k]={m:src[m][k] for m in g['MODELS']}
@@ -125,8 +128,8 @@ lines += [r'\bottomrule',r'\end{tabular}'];(P/'data/combined_matched_panel.tex')
 result.update(starsim='fixed-state continuous; binary excluded',uncertainty=combined_unc,method='current nine-cell definition; other simulations fixed; panel bootstrap does not refit theta; replay bootstrap refits fixed panel')
 dump(O/'combined_score.json',result)
 for n in ['combined_score.json','combined_score_table.tex','combined_score_macros.tex']:shutil.copy2(O/n,P/'data'/n)
-sys.argv=['plot','--paper-root',str(P),'--combined',str(P/'data/combined_score.json'),'--out-dir',str(P/'figures')];runpy.run_path(str(P/'data/scripts/plot_combined_score.py'),run_name='__main__')
-runpy.run_path(str(P/'data/scripts/make_rank_table.py'),run_name='__main__')
+sys.argv=['plot','--paper-root',str(P),'--combined',str(P/'data/combined_score.json'),'--out-dir',str(P/'figures')];runpy.run_path(str(COMBINED/'plot_combined_score.py'),run_name='__main__')
+sys.argv=['rank','--paper-root',str(P)];runpy.run_path(str(COMBINED/'make_rank_table.py'),run_name='__main__')
 # Compact appendix table: separate uncertainty sources, no joint interval or effect-skill claim.
 lines=[r'\begin{tabular}{llrrrr}',r'\toprule',r'Score & Comparator & $n$ & $\rho$ & Models, 95\% & Replays, 95\% \\',r'\midrule']
 for group,label in [('cont_uncond','Continuous baseline'),('interventional_pooled','Interventional outcomes'),('combined_current','Combined nine cells')]:

@@ -100,6 +100,16 @@ def series(long, qtype, cond, rung, horizon="pooled"):
     return sorted([(r["model"], r["eci"], r["excess"], r["complete"]) for r in long if r["question_type"] == qtype and r["condition"] == cond
                    and r["rung"] == rung and r["horizon"] == horizon and "excess" in r], key=lambda t: t[1])
 
+def skill_annotation(rho, lo, hi, n):
+    """Display ECI versus negative loss; raw axes and raw rho_ci API stay unchanged.
+
+    Negation reverses percentile endpoints: [lo, hi] -> [-hi, -lo].
+    The caller supplies the original bootstrap; no uncertainty is recomputed here.
+    """
+    return (f"$\\rho(\\mathrm{{ECI}},-\\mathrm{{loss}})$ = {-rho:.2f} "
+            f"[{-hi:.2f}, {-lo:.2f}], $n$ = {n}")
+
+
 def fig_unconditional(long, out, C):
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.2, 2.9)); fig.subplots_adjust(wspace=0.32)
     b = series(long, "binary", "unconditional", "-"); fg.scatter(a1, b, n_top=2, n_resid=4, n_low=0); rho, lo, hi, n = fg.rho_ci(b, seed=0)
@@ -111,7 +121,7 @@ def fig_unconditional(long, out, C):
     a1.set_title("Binary, unconditional", fontsize=8); a1.set_xlabel("Epoch Capabilities Index"); a1.set_ylabel("Excess log score (bits; lower is better)")
     vals = [p[2] for p in b if p[3]]; n01 = sum(v <= 0.01 for v in vals)
     a1.text(0.98, 0.80, f"{n01} of {len(vals)} models within 0.01 bit of the truth", transform=a1.transAxes, ha="right", fontsize=6, color=fg.GREY)
-    a1.text(0.98, 0.92, f"Spearman $\\rho$ = {rho:.2f}  [{lo:.2f}, {hi:.2f}],  $n$ = {n}", transform=a1.transAxes, ha="right", fontsize=7.5)
+    a1.text(0.98, 0.92, skill_annotation(rho, lo, hi, n), transform=a1.transAxes, ha="right", fontsize=7.5)
     c = series(long, "continuous", "unconditional", "-"); fg.scatter(a2, c, n_top=3, n_resid=3, n_low=0);
     # Place the crowded high-capability labels explicitly, leaving every point unchanged.
     offsets = {"GPT-5.6 Sol": (-33, 17), "Fable": (5, 53), "Opus 5": (-14, 35)}
@@ -127,7 +137,7 @@ def fig_unconditional(long, out, C):
     rho2, lo2, hi2, n2 = fg.rho_ci(c, seed=0)
     a2.axhline(0, ls="--", lw=0.6, color=fg.GREY); a2.text(0.02, 0.0, "quantile oracle", transform=a2.get_yaxis_transform(), ha="left", va="bottom", fontsize=6, color=fg.GREY)
     a2.set_title("Continuous, unconditional", fontsize=8); a2.set_xlabel("Epoch Capabilities Index"); a2.set_ylabel("Excess CRPS / $C$ (lower is better)")
-    a2.text(0.98, 0.92, f"Spearman $\\rho$ = {rho2:.2f}  [{lo2:.2f}, {hi2:.2f}],  $n$ = {n2}", transform=a2.transAxes, ha="right", fontsize=7.5)
+    a2.text(0.98, 0.92, skill_annotation(rho2, lo2, hi2, n2), transform=a2.transAxes, ha="right", fontsize=7.5)
     fig.savefig(out / "fig_starsim_unconditional.pdf", bbox_inches="tight"); fig.savefig(out / "fig_starsim_unconditional.png", dpi=200, bbox_inches="tight"); plt.close(fig)
     cv = sorted(p[2] for p in c if p[3])
     return {"binary": dict(rho=rho, lo=lo, hi=hi, n=n, n_within_001_bit=n01, min=min(vals), max=max(vals), median=float(np.median(vals))),
@@ -140,14 +150,14 @@ def fig_interventional(long, out):
     ax.axhline(0, ls="--", lw=0.6, color=fg.GREY); ax.text(0.99, 0.0, "quantile oracle", transform=ax.get_yaxis_transform(), ha="right", va="bottom", fontsize=6, color=fg.GREY)
     ax.set_xlabel("Epoch Capabilities Index"); ax.set_ylabel("Interventional excess CRPS / $C$ (lower is better)"); ax.set_title("All rungs pooled", fontsize=8, loc="left")
     inc = [p for p in pooled if not p[3]]
-    note = f"Spearman $\\rho$ = {rho:.2f}  [{lo:.2f}, {hi:.2f}],  $n$ = {n}" + ("\nopen marker: incomplete, not in $\\rho$" if inc else "")
+    note = skill_annotation(rho, lo, hi, n) + ("\nopen marker: incomplete, not in $\\rho$" if inc else "")
     ax.text(0.98, 0.97, note, transform=ax.transAxes, ha="right", va="top", fontsize=7)
     stats = {"pooled": dict(rho=rho, lo=lo, hi=hi, n=n)}
     for i, rung in enumerate(("c25", "c50", "c90")):
         axs = fig.add_subplot(gs[i, 1]); pts = series(long, "continuous", "interventional", rung); fg.scatter(axs, pts, labels=False)
         r2, l2, h2, n2 = fg.rho_ci(pts, seed=0); stats[rung] = dict(rho=r2, lo=l2, hi=h2, n=n2)
         axs.axhline(0, ls="--", lw=0.6, color=fg.GREY)
-        axs.set_title(f"{rung[1:]}% coverage:  $\\rho$ = {r2:.2f} [{l2:.2f}, {h2:.2f}], $n$ = {n2}", fontsize=6, pad=2)
+        axs.set_title(f"{rung[1:]}% coverage: $\\rho_s$ = {-r2:.2f} [{-h2:.2f}, {-l2:.2f}], $n$ = {n2}", fontsize=6, pad=2)
         if i == 2: axs.set_xlabel("Epoch Capabilities Index", fontsize=7)
         else: axs.set_xticklabels([])
     fig.savefig(out / "fig_starsim_interventional.pdf", bbox_inches="tight"); fig.savefig(out / "fig_starsim_interventional.png", dpi=200, bbox_inches="tight"); plt.close(fig)
@@ -238,12 +248,12 @@ def main():
                                 min_excess_bin=min(v["excess"] for n, pi in per_item.items() if n.startswith("binary") for d in pi.values() for v in d.values())),
                 provenance=dict(runs=str(Path(a.runs).resolve()), grid=list(TAU), clip=CLIP, tail=TAIL, bootstrap="10,000 draws over models, ECI seed 0; ForecastBench validation seed 2026"))
     json.dump(nums, open(out / "numbers.json", "w"), indent=1, default=float)
-    # LaTeX macros for the numbers
+    # Skill-oriented LaTeX macros; numbers.json retains raw loss correlations.
     def mac(k, v): return f"\\newcommand{{\\{k}}}{{{v}}}"
     M = [mac("ssCfourty", f"{C[40]:.0f}"), mac("ssCsixty", f"{C[60]:.0f}")]
     for key, d in (("BinUncond", su["binary"]), ("ContUncond", su["continuous"]), ("IntPooled", si["pooled"]), ("IntCtf", si["c25"]), ("IntCfifty", si["c50"]), ("IntCninety", si["c90"]),
                    ("BinCninety", extra["binary_int_c90"]), ("BinHold", extra["binary_int_hold"])):
-        M += [mac(f"ssRho{key}", f"{d['rho']:.2f}"), mac(f"ssRhoLo{key}", f"{d['lo']:.2f}"), mac(f"ssRhoHi{key}", f"{d['hi']:.2f}"), mac(f"ssN{key}", str(d["n"]))]
+        M += [mac(f"ssRho{key}", f"{-d['rho']:.2f}"), mac(f"ssRhoLo{key}", f"{-d['hi']:.2f}"), mac(f"ssRhoHi{key}", f"{-d['lo']:.2f}"), mac(f"ssN{key}", str(d["n"]))]
     (out / "starsim_excess_macros.tex").write_text("\n".join(M) + "\n")
     print(json.dumps(nums, indent=1, default=float)); print("[saved] ->", out)
 

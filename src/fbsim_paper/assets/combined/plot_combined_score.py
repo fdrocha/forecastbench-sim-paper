@@ -4,18 +4,19 @@
 # ///
 """Figure of section 7's combined score: the latent skill theta_m against ECI, one point per model.
 Reads the JSON combined_score.py writes and writes fig_combined_score.{pdf,png,json} to figures/ (or --out-dir);
-the JSON holds every plotted value. Run with `uv run data/scripts/plot_combined_score.py`.
+the JSON holds every plotted value. Run with `plot_combined_score.py --paper-root PAPER`.
 """
 import argparse, json
 from pathlib import Path
 import numpy as np
 from paper_roster import paper_roster
-ROOT = Path(__file__).resolve().parents[2]
 ap = argparse.ArgumentParser(description=__doc__)
-ap.add_argument('--paper-root', type=Path, default=ROOT)
-ap.add_argument('--combined', type=Path, default=ROOT / 'data' / 'combined_score.json', help='combined_score.json as combined_score.py wrote it')
-ap.add_argument('--out-dir', type=Path, default=ROOT / 'figures', help='Where the figure goes')
+ap.add_argument('--paper-root', type=Path, required=True)
+ap.add_argument('--combined', type=Path, help='combined_score.json as combined_score.py wrote it; default PAPER/data/combined_score.json')
+ap.add_argument('--out-dir', type=Path, help='Where the figure goes; default PAPER/figures')
 a = ap.parse_args()
+a.combined = a.combined or a.paper_root / 'data' / 'combined_score.json'
+a.out_dir = a.out_dir or a.paper_root / 'figures'
 MODELS, ECI, _ = paper_roster(a.paper_root.resolve())
 
 # The look of the paper's other scatters: dark green points, grey reference line, serif text.
