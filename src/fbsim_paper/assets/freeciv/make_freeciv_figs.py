@@ -13,17 +13,16 @@ Inputs are read from data/freeciv/ (see _common.py). Moved from the retired pape
 import json
 import sys
 import warnings
-from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.transforms import Bbox
 from scipy.stats import pearsonr, spearmanr
 
 warnings.filterwarnings("ignore", message=".*cmr10.*")
 
+from fbsim_paper import capability_plot  # noqa: E402
 from _common import DATA, FIGURES, MODEL_SCORES, RELIABILITY, SCORE_ITEMS, WIDE, rel  # noqa: E402
 
 ITEMS = SCORE_ITEMS
@@ -113,18 +112,17 @@ ECI = eci.loc[models].values
 
 PANELS = {
     "continuous": dict(set="continuous", col="excess_ncrps_global", n_items=300,
-                       ylabel="Excess nCRPS",
-                       title="(a) Continuous"),
+                       ylabel="Excess nCRPS"),
     "tails": dict(set="tails", col="excess_bits", n_items=300,
-                  ylabel="Excess bits",
-                  title="(b) Tails ($q \\leq 0.05$)"),
+                  ylabel="Excess bits"),
     "natcond": dict(set="natcond", col="excess_t2", n_items=400,
-                    ylabel="Turn-2 excess Brier",
-                    title="(c) Natural conditionals"),
+                    ylabel="Turn-2 excess Brier"),
     "bank": dict(set="bank", col="excess_brier", n_items=750,
-                 ylabel="Excess Brier",
-                 title="(d) Mid-range"),
+                 ylabel="Excess Brier"),
 }
+# the capability figure's panels, in the order the paper discusses them
+CAP_TITLES = {"bank": "(a) Mid-range", "tails": "(b) Tail",
+              "continuous": "(c) Continuous", "natcond": "(d) Nat. Cond."}
 HORIZONS = {"continuous": [90, 120, 150, 180, 210], "tails": [90, 120, 150, 180, 210],
             "natcond": [120, 150, 180, 210], "bank": [90, 120, 150, 180, 210]}
 
@@ -178,81 +176,16 @@ def cluster_boot(piv, worlds, n_boot=N_BOOT):
     )
 
 
-def fmt(x, nd=2):
-    s = f"{abs(x):.{nd}f}"
-    return ("-" if x < 0 else "") + s
-
-
-def rho_text(rho, lo, hi):
-    return r"$\rho = " + fmt(rho) + r"\ [" + fmt(lo) + r",\ " + fmt(hi) + r"]$"
-
-
 def prov_note(ax, loc="upper left"):
     x, ha = (0.02, "left") if loc.endswith("left") else (0.98, "right")
     y, va = (0.98, "top") if loc.startswith("upper") else (0.02, "bottom")
     ax.text(x, y, PROV, transform=ax.transAxes, fontsize=5.5, color=GREY, ha=ha, va=va, zorder=1)
 
 
-def place_labels(fig, ax, xs, ys, names, required, fontsize=6.2, blocked=()):
-    """Greedy label placement: required indices always get a label (least-overlap slot);
-    the rest are labelled only where the label overlaps nothing. `blocked` = axes-fraction
-    boxes (x0, y0, x1, y1) that labels must not enter."""
-    fig.canvas.draw()
-    rend = fig.canvas.get_renderer()
-    axbb = ax.get_window_extent(rend)
-    disp = ax.transData.transform(np.c_[xs, ys])
-    pt_boxes = [Bbox.from_bounds(px - 2.5, py - 2.5, 5, 5) for px, py in disp]
-    placed = [Bbox(ax.transAxes.transform([[b[0], b[1]], [b[2], b[3]]])) for b in blocked]
-    slots = [(4, 2, "left", "bottom"), (4, -2, "left", "top"), (-4, 2, "right", "bottom"),
-             (-4, -2, "right", "top"), (0, 5, "center", "bottom"), (0, -5, "center", "top"),
-             (6, 0, "left", "center"), (-6, 0, "right", "center"),
-             (8, 7, "left", "bottom"), (8, -7, "left", "top"), (-8, 7, "right", "bottom"), (-8, -7, "right", "top"),
-             (0, 10, "center", "bottom"), (0, -10, "center", "top"),
-             # farther slots: the leader line keeps the association readable
-             (13, 11, "left", "bottom"), (13, -11, "left", "top"), (-13, 11, "right", "bottom"), (-13, -11, "right", "top"),
-             (0, 16, "center", "bottom"), (0, -16, "center", "top"), (16, 0, "left", "center"), (-16, 0, "right", "center"),
-             (20, 16, "left", "bottom"), (20, -16, "left", "top"), (-20, 16, "right", "bottom"), (-20, -16, "right", "top")]
-    order = list(required) + [i for i in np.argsort(-np.abs(ys - np.median(ys))) if i not in required]
-    labelled = []
-    for i in order:
-        best, best_ov = None, np.inf
-        for dx, dy, ha, va in (slots if i in required else slots[:14]):
-            t = ax.annotate(names[i], (xs[i], ys[i]), xytext=(dx, dy), textcoords="offset points",
-                            fontsize=fontsize, ha=ha, va=va, color="#333333", zorder=4,
-                            arrowprops=dict(arrowstyle="-", lw=0.35, color="#B8B8B8", shrinkA=0, shrinkB=2.2))
-            # text-only box (Annotation.get_window_extent would also include the leader line);
-            # update_positions applies the offset first, otherwise the box sits on the data point
-            t.update_positions(rend)
-            bb = mpl.text.Text.get_window_extent(t, rend).expanded(1.08, 1.15)
-            ov = 0.0
-            for j, pb in enumerate(pt_boxes):
-                if j != i and bb.overlaps(pb):
-                    ov += 1.0
-            for pb in placed:
-                if bb.overlaps(pb):
-                    ov += 2.0
-            if not (axbb.x0 <= bb.x0 and bb.x1 <= axbb.x1 and axbb.y0 <= bb.y0 and bb.y1 <= axbb.y1):
-                ov += 10.0   # a label outside its panel is worse than one that touches a few points
-            if ov < best_ov:
-                if best is not None:
-                    best.remove()
-                best, best_ov, best_bb = t, ov, bb
-            else:
-                t.remove()
-            if ov == 0:
-                break
-        if best_ov == 0 or i in required:
-            placed.append(best_bb)
-            labelled.append(names[i])
-        else:
-            best.remove()
-    return labelled
-
-
-def save(fig, stem, numbers):
-    fig.savefig(FIGDIR / f"{stem}.pdf")
+def save(fig, stem, numbers, backend=None):
+    fig.savefig(FIGDIR / f"{stem}.pdf", backend=backend)
     if WRITE_PNG:
-        fig.savefig(FIGDIR / f"{stem}.png", dpi=200)
+        fig.savefig(FIGDIR / f"{stem}.png", dpi=200, backend=backend)
     with open(FIGDIR / f"{stem}.json", "w") as f:
         json.dump(numbers, f, indent=1)
     plt.close(fig)
@@ -270,57 +203,40 @@ summary = dict(
     models={m: dict(short=SHORT[m], eci=float(eci[m])) for m in models},
 )
 
-# ================================================================ Figure 1: capability 2x2
-fig, axes = plt.subplots(1, 4, figsize=(5.5, 1.95))
-fig.subplots_adjust(left=0.09, right=0.995, top=0.85, bottom=0.33, wspace=0.55)
+# ================================================================ Figure 1: capability, styled as Micropolis's
 cap = {}
-for ax, (key, spec) in zip(axes.ravel(), PANELS.items()):
-    piv, worlds, Ts = per_model_matrix(spec["set"], spec["col"])
-    assert piv.shape[1] == spec["n_items"], (key, piv.shape)
-    score = piv.mean(axis=1, skipna=True).values  # nanmean over items, as SCORES.md
-    n_valid = piv.notna().sum(axis=1).values
-    rho, p, lo, hi = spearman_boot(ECI, -score)
-    if STATS and STATS.get(STATS_COL[key]):   # quote the table's numbers where they exist
-        srow = STATS[STATS_COL[key]]
-        assert abs(srow["rho"] - rho) < 0.005, (key, srow["rho"], rho)
-        rho, p, lo, hi = srow["rho"], srow["p"], srow["ci_lo"], srow["ci_hi"]
-    boots = cluster_boot(piv, worlds)
-    order = np.argsort(score)
-    required = list(order[:1]) + list(order[-1:])
-    ax.scatter(ECI, score, s=14, color=GREEN, zorder=3, linewidths=0)
-    ax.scatter(ECI[required], score[required], s=14, color=ORANGE, zorder=3, linewidths=0)
-    names = [SHORT[m] for m in models]
-    r = score.max() - score.min()
-    ax.set_ylim(score.min() - 0.18 * r, score.max() + 0.42 * r)
-    ax.set_xlim(ECI.min() - 2.5, ECI.max() + 8.0)   # room for the label of the best model at the right edge
-    labelled = place_labels(fig, ax, ECI, score, names, required, blocked=[(0, 0.80, 1, 1)])
-    ax.set_title(spec["title"], loc="left", fontsize=8)
-    ax.set_ylabel(spec["ylabel"], fontsize=7.5)
-    ax.tick_params(labelsize=7.5)
-    ax.text(0.98, 0.885, rho_text(rho, lo, hi), transform=ax.transAxes, fontsize=6.5,
-            ha="right", va="top", color=GREEN)
-    cap[key] = dict(
-        set=spec["set"], metric=spec["col"], n_items=int(spec["n_items"]),
-        scores={m: float(s) for m, s in zip(models, score)},
-        n_valid={m: int(n) for m, n in zip(models, n_valid)},
-        eci={m: float(e) for m, e in zip(models, ECI)},
-        spearman=dict(rho=rho, p=p, ci95_models=[lo, hi], n_models=24),
-        spearman_item_bootstraps=boots,
-        best3=[models[i] for i in order[:3]], worst3=[models[i] for i in order[-3:]],
-        labelled_models=labelled,
-    )
-    print(f"{key:11s} rho={rho:+.3f} p={p:.3f} CI_models=[{lo:+.2f},{hi:+.2f}] "
-          f"CI_world=[{boots['cluster_world']['ci95'][0]:+.2f},{boots['cluster_world']['ci95'][1]:+.2f}] "
-          f"CI_item=[{boots['item_iid']['ci95'][0]:+.2f},{boots['item_iid']['ci95'][1]:+.2f}] "
-          f"best={SHORT[models[order[0]]]} {score[order[0]]:.4f} worst={SHORT[models[order[-1]]]} {score[order[-1]]:.4f}")
-for ax in axes:
-    ax.set_xlabel("ECI", fontsize=8)
-fig.text(0.5, 0.008,
-         r"$\rho$: Spearman rank correlation of ECI with $-$score, so positive means more capable models score better." + "\n"
-         f"Brackets: 95% percentile CI from {N_BOOT:,} bootstrap resamples of the 24 models. Orange: best and worst model.",
-         ha="center", va="bottom", fontsize=6.3, color=GREY, linespacing=1.3)
-fig.text(0.5, 0.995, PROV, ha="center", va="top", fontsize=6, color=GREY)
-save(fig, "fig_freeciv_capability", dict(source=rel(ITEMS), eci_source=rel(WIDE), panels=cap, provisional=PROV))
+with capability_plot.style():
+    fig, axes = capability_plot.figure(len(CAP_TITLES))
+    for ax, key in zip(axes, CAP_TITLES):
+        spec = PANELS[key]
+        piv, worlds, Ts = per_model_matrix(spec["set"], spec["col"])
+        assert piv.shape[1] == spec["n_items"], (key, piv.shape)
+        score = piv.mean(axis=1, skipna=True).values  # nanmean over items, as SCORES.md
+        n_valid = piv.notna().sum(axis=1).values
+        rho, p, lo, hi = spearman_boot(ECI, -score)
+        if STATS and STATS.get(STATS_COL[key]):   # quote the table's numbers where they exist
+            srow = STATS[STATS_COL[key]]
+            assert abs(srow["rho"] - rho) < 0.005, (key, srow["rho"], rho)
+            rho, p, lo, hi = srow["rho"], srow["p"], srow["ci_lo"], srow["ci_hi"]
+        boots = cluster_boot(piv, worlds)
+        order = np.argsort(score)
+        capability_plot.draw_panel(ax, ECI, score, capability_plot.rho_note(rho, (lo, hi)), spec["ylabel"], CAP_TITLES[key])
+        cap[key] = dict(
+            set=spec["set"], metric=spec["col"], n_items=int(spec["n_items"]),
+            scores={m: float(s) for m, s in zip(models, score)},
+            n_valid={m: int(n) for m, n in zip(models, n_valid)},
+            eci={m: float(e) for m, e in zip(models, ECI)},
+            spearman=dict(rho=rho, p=p, ci95_models=[lo, hi], n_models=24),
+            spearman_item_bootstraps=boots,
+            best3=[models[i] for i in order[:3]], worst3=[models[i] for i in order[-3:]],
+        )
+        print(f"{key:11s} rho={rho:+.3f} p={p:.3f} CI_models=[{lo:+.2f},{hi:+.2f}] "
+              f"CI_world=[{boots['cluster_world']['ci95'][0]:+.2f},{boots['cluster_world']['ci95'][1]:+.2f}] "
+              f"CI_item=[{boots['item_iid']['ci95'][0]:+.2f},{boots['item_iid']['ci95'][1]:+.2f}] "
+              f"best={SHORT[models[order[0]]]} {score[order[0]]:.4f} worst={SHORT[models[order[-1]]]} {score[order[-1]]:.4f}")
+    if PROV:
+        fig.suptitle(PROV, fontsize=6, color=GREY)
+    save(fig, "fig_freeciv_capability", dict(source=rel(ITEMS), eci_source=rel(WIDE), panels=cap, provisional=PROV), backend="pgf")
 summary["fig_freeciv_capability"] = cap
 
 # ================================================================ Figure 2: horizon
@@ -374,7 +290,7 @@ for ax, (key, spec) in zip(axes, PANELS.items()):
                    iqr_q25=q25.tolist(), iqr_q75=q75.tolist(),
                    per_model={m: per_model[i].tolist() for i, m in enumerate(models)},
                    reference=(dict(label=ref_label, values=ref) if ref is not None else None))
-    print(f"{key:11s} horizon means: " + " ".join(f"{v:.3f}" for v in mean) + (f" ref: " + " ".join(f"{v:.3f}" for v in ref) if ref else ""))
+    print(f"{key:11s} horizon means: " + " ".join(f"{v:.3f}" for v in mean) + (" ref: " + " ".join(f"{v:.3f}" for v in ref) if ref else ""))
 axes[0].legend(loc="lower right", fontsize=7.5, handlelength=1.6, borderaxespad=0.3)
 save(fig, "fig_freeciv_horizon", dict(source=rel(ITEMS), panels=hz, provisional=PROV,
                                       notes="mean and interquartile range across the 24 per-model means at each resolution turn; snapshot at turn 60; natural conditionals exist only for T120-T210; bank reference = mean (0.5-q)^2 over that horizon's items; tails reference = mean KL(q||0.05); natcond reference = mean over models of the not-updating excess (p1 - p(Y|X))^2"))

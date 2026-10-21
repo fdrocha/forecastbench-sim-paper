@@ -15,12 +15,11 @@ Spearman rho vs ECI with a 95% percentile bootstrap over models (10,000 draws), 
   python build_excess.py --runs results/causal/rerun_lowest --out <dir>
 """
 from __future__ import annotations
-import argparse, csv, json, math, statistics, sys
+import argparse, csv, json, statistics
 from collections import defaultdict
 from pathlib import Path
 import numpy as np
 from fbsim_benchmark.scoring.pandemic import crps5, kl_bits
-from scipy.stats import spearmanr
 from paths import analysis_modules, use_cached_runs
 ANALYSIS_ROOT, bt, fg = analysis_modules()
 import matplotlib.pyplot as plt  # noqa: E402
@@ -231,7 +230,7 @@ def main():
     with open(out / "starsim_excess_long.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore"); w.writeheader()
         for r in long: w.writerow({k: (f"{v:.6g}" if isinstance(v, float) else v) for k, v in r.items()})
-    su = fig_unconditional(long, out, C); si = fig_interventional(long, out); sh = fig_horizon(long, out); rec = per_item_table(per_item, out, C)
+    su = fig_unconditional(long, out, C); si = fig_interventional(long, out); sh = fig_horizon(long, out); per_item_table(per_item, out, C)
     # binary supplementary columns + strata
     extra = {}
     for name in ("binary_int_c90", "binary_int_hold", "cont_int_c25", "cont_int_c50", "cont_int_c90"):

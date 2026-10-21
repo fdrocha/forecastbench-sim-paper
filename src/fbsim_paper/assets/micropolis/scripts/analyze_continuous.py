@@ -132,11 +132,6 @@ READ_OFF_NOTE = f"excludes H{READ_OFF_HORIZON} (a read-off, not a forecast)"
 TURNS_PER_YEAR = 48
 
 
-def horizon_label(horizon: int) -> str:
-    """A horizon in turns past the snapshot, as years (e.g. 144 -> "3y")."""
-    return f"{horizon / TURNS_PER_YEAR:g}y"
-
-
 # A model's identity in a figure: a color and a marker shape. Two dozen models
 # is more than any palette separates by hue alone — tab20 pairs a light and a
 # dark of each hue, and at scatter size those read as one color — so shape

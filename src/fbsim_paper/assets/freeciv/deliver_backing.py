@@ -49,7 +49,8 @@ behind the FreeCiv rows of the validation tables (`freeciv_validation_stats.json
 | `freeciv_natcond_forecasts.csv` | one row per model and natural-conditional cell: turn-1, turn-2 and no-news forecasts, p(Y), p(Y|X), scores |
 | `freeciv_questions.csv` | every binary question and cell: text, resolution criteria, revealed fact |
 | `freeciv_effort_check.json` | the reasoning-effort check on the grouped prompts: per model, both levels, the 200 questions' constant-0.5 excess, correlations with ECI |
-| `freeciv_numbers.json`, `freeciv_summary.json`, `freeciv_family_summary.json`, `freeciv_validation_stats.json` | every number the FreeCiv prose and figures quote, with its source and method |
+| `freeciv_selection_weights.csv` | per mid-range question: its selection group (band of q, horizon, family), the group's candidate and selected counts, and its weight in the appendix's comparison with equal weights |
+| `freeciv_numbers.json`, `freeciv_summary.json`, `freeciv_family_summary.json`, `freeciv_validation_stats.json`, `freeciv_prose_numbers.json`, `freeciv_grouping.json` | every number the FreeCiv prose and figures quote, with its source and method |
 
 Per-item scores (46,176 rows), raw model responses, the question sets with their replay truth, the
 world reports and the elicitation and scoring code are in the repository above, and in the release

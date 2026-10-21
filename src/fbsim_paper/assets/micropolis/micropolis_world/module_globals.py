@@ -1,12 +1,10 @@
 """Defines some global variables used throughout the Micropolis world."""
 
 import os
-import time
 from pathlib import Path
 
 
 from . import messages as msg
-from .usage import LLMResponse, usage_from_response
 
 PKG_DIR = Path(__file__).resolve().parent.parent  # forecastbench-sim/worlds/micropolis
 FBS_DIR = PKG_DIR.parent.parent  # forecastbench-sim

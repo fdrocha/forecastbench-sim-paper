@@ -10,6 +10,7 @@ STEPS = ['micropolis', 'freeciv', 'starsim', 'combined']
 INPUTS = 'datasets/paper-inputs'
 FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
 FREECIV_RUN = 'run2_paper'
+FREECIV_FRACTIONS = 'datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1/sets/draw_v1/selection_fractions_bank_tails_mirrors.json'
 
 def stage(inputs, paper):
     """Copy each file of paper-inputs to the same path under the manuscript's data/, if its content differs."""
@@ -37,10 +38,15 @@ def _commands(step, data, paper, tmp):
         env = _env(tmp); env.update(FBSIM_SOURCE_ROOT=str(src), FBSIM_RUN=FREECIV_RUN, FBSIM_PAPER_ROOT=str(paper))
         return env, [[py, str(A/s), '--paper-root', str(paper)] for s in ['deliver_backing.py', 'make_freeciv_tables.py', 'make_freeciv_difficulty_table.py', 'make_freeciv_family_table.py']] + [
             [py, str(A/'make_freeciv_forecast_files.py'), '--results', str(results/FREECIV_RUN), '--sets', str(src/'sets/draw_v1'), '--out', str(paper/'data/freeciv')],
+            [py, str(A/'make_freeciv_grouping.py'), '--one', str(results/'run1_2026-09-09'), '--grouped', str(results/FREECIV_RUN),
+             '--shuffled', str(results/'run2_shuffled'), '--paper-root', str(paper)],
             [py, str(A/'effort_check_report.py'), str(results/FREECIV_RUN), str(results/'run2_effort'), str(results/'run2b_2026-09-20/batched'),
              '--run1', str(results/'run1_2026-09-09'), '--out', str(paper/'data/freeciv/freeciv_effort_check.json')],
             [py, str(A/'validation_stats.py'), '--paper-root', str(paper)],
-            [py, str(A/'make_freeciv_figs.py'), '--paper-root', str(paper)]]
+            [py, str(A/'make_freeciv_figs.py'), '--paper-root', str(paper)],
+            [py, str(A/'selection_weights.py'), '--sets', str(src/'sets/draw_v1'), '--fractions', str(data/FREECIV_FRACTIONS),
+             '--out', str(paper/'data/freeciv/freeciv_selection_weights.csv')],
+            [py, str(A/'make_freeciv_macros.py'), '--paper-root', str(paper)]]
     if step == 'starsim':
         analysis = analysis_root(data, tmp/'analysis')
         return _env(tmp), [[py, str(ASSETS/'starsim'/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),

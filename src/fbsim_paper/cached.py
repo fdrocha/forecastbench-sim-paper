@@ -1,5 +1,4 @@
 """Run native cached reporting in disposable directories, never the manuscript."""
-from pathlib import Path
 import json, os, shutil, subprocess, sys, time
 from .runner import ASSETS, sha, validate
 

@@ -1,7 +1,7 @@
 """Second pass on top of build_excess.py: appendix tables in the paper's layout, validation statistics
 (ECI seed 0, matching the published figures; ForecastBench seed 2026; figures.rho_ci), p-values, the
 horizon figure in raw units (people), per-set item-difficulty summaries. Reads build_excess outputs."""
-import argparse, csv, json, statistics, sys
+import argparse, csv, json
 from collections import defaultdict
 from pathlib import Path
 import numpy as np

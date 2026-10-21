@@ -10,7 +10,7 @@ so every cell is an excess score.
 Reads only the paper checkout (the roster via paper_roster.py); plot_combined_score.py draws the figure from the
 JSON this writes. Run with `combined_score.py --paper-root PAPER --out PAPER/data/combined_score.json`.
 """
-import argparse, csv, json, re, sys
+import argparse, csv, json
 from pathlib import Path
 import numpy as np
 from scipy.stats import spearmanr
