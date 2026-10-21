@@ -31,9 +31,8 @@ Copied from `worlds/freeciv/fbsim_v3/results/{RUN}/` of the `forecastbench-sim` 
 (branch `freeciv-v3`) by `worlds/freeciv/fbsim_v3/paper/deliver_backing.py`. Do not edit here: the
 generators in that folder write the FreeCiv tables (`../appendix_tables/freeciv_*.tex`,
 `../freeciv_*_families.tex`, `../freeciv_items_per_anchor.tex`), the FreeCiv figures
-(`../../figures/fig_freeciv_*.pdf` with a JSON of every plotted number beside each) and the FreeCiv
-cells of the shared tables (`../hosting_cost_table.tex`, `../roster_table.tex`,
-`../appendix_tables/cost_per_item.tex`, `../validation_table*.tex`).
+(`../../figures/fig_freeciv_*.pdf` with a JSON of every plotted number beside each) and the statistics
+behind the FreeCiv rows of the validation tables (`freeciv_validation_stats.json`).
 
 | file | what |
 |---|---|

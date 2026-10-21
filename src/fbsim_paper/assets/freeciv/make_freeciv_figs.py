@@ -1,6 +1,6 @@
 """FreeCiv figures for the ForecastBench-Sim paper.
 
-    python data/freeciv/scripts/make_freeciv_figs.py [--png]
+    python src/fbsim_paper/assets/freeciv/make_freeciv_figs.py [--png]
 
 
 Sources (read-only):
@@ -38,7 +38,7 @@ ORANGE = "#E8632C"
 GREY = "#8C8C8C"
 LGREY = "#D0D0D0"
 from _common import RUN, REPO  # noqa: E402
-# the validation statistics file written by update_shared_tables.py: the figure quotes the same rho and interval as the table
+# the validation statistics file written by validation_stats.py: the figure quotes the same rho and interval as the table
 _STATS_FILE = REPO / "data" / "freeciv" / "freeciv_validation_stats.json"
 STATS = {r["column"]: r["eci"] for r in json.load(open(_STATS_FILE))["rows"]} if _STATS_FILE.exists() else None
 STATS_COL = {"continuous": "continuous_all_excess_ncrps_global", "tails": "tails_all_excess_bits", "natcond": "natcond_all_excess_t2", "bank": "bank_all_excess_brier"}

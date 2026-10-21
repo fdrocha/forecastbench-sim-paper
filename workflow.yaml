@@ -84,7 +84,7 @@
     },
     {
       "id": "build",
-      "command": "fbsim-paper build [micropolis] [freeciv] [starsim]",
+      "command": "fbsim-paper build [micropolis] [freeciv] [starsim] [combined]",
       "inputs": "$FBSIM_DATA_ROOT/datasets/paper-inputs, cached Starsim/FreeCiv archive folders, this checkout's scripts",
       "outputs": "generated tables, figures, macros and data files in the manuscript checkout ($FBSIM_PAPER_ROOT)",
       "schema_version": "1",
