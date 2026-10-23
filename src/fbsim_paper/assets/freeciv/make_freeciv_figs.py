@@ -40,6 +40,11 @@ from _common import RUN, REPO  # noqa: E402
 # the validation statistics file written by validation_stats.py: the figure quotes the same rho and interval as the table
 _STATS_FILE = REPO / "data" / "freeciv" / "freeciv_validation_stats.json"
 STATS = {r["column"]: r["eci"] for r in json.load(open(_STATS_FILE))["rows"]} if _STATS_FILE.exists() else None
+# the baselines, from make_freeciv_baselines.py, drawn in every panel
+_BASELINES = DATA / "freeciv_baselines.json"
+BASE = json.load(open(_BASELINES)) if _BASELINES.exists() else None
+BASE_SCORE = {"bank": "bank_all_excess_brier", "tails": "tails_all_excess_bits", "continuous": "continuous_all_excess_ncrps_global",
+              "natcond": "natcond_all_excess_t2"}   # each capability panel's baseline
 STATS_COL = {"continuous": "continuous_all_excess_ncrps_global", "tails": "tails_all_excess_bits", "natcond": "natcond_all_excess_t2", "bank": "bank_all_excess_brier"}
 PROV = "provisional: one question per prompt; batched rerun pending" if RUN.startswith("run1") else ""
 N_BOOT = 10000
@@ -220,7 +225,8 @@ with capability_plot.style():
             rho, p, lo, hi = srow["rho"], srow["p"], srow["ci_lo"], srow["ci_hi"]
         boots = cluster_boot(piv, worlds)
         order = np.argsort(score)
-        capability_plot.draw_panel(ax, ECI, score, capability_plot.rho_note(rho, (lo, hi)), spec["ylabel"], CAP_TITLES[key])
+        capability_plot.draw_panel(ax, ECI, score, capability_plot.rho_note(rho, (lo, hi)), spec["ylabel"], CAP_TITLES[key],
+                                   BASE and BASE[BASE_SCORE[key]])
         cap[key] = dict(
             set=spec["set"], metric=spec["col"], n_items=int(spec["n_items"]),
             scores={m: float(s) for m, s in zip(models, score)},
@@ -273,6 +279,18 @@ for ax, (key, spec) in zip(axes, PANELS.items()):
         piv_s, _, Ts_s = per_model_matrix("natcond", "stay")
         ref = [float(np.nanmean(piv_s.values[:, Ts_s == h])) for h in hs]
         ref_label = "no update"
+    # the paper's baseline at each turn: the base rate (binary), the climatological change (continuous) or independence
+    base = None
+    if BASE:
+        base = ([BASE["continuous_excess_by_horizon"][str(h)] for h in hs] if key == "continuous"
+                else [BASE["natcond_by_horizon"][str(h)] for h in hs] if key == "natcond"
+                else [BASE["binary_by_horizon"][str(h)]["mid" if key == "bank" else "tail"] for h in hs])
+        style = capability_plot.BASELINE_STYLE
+        label = {"continuous": "climatological change", "natcond": "independence"}.get(key, "base rate")
+        ax.plot(hs, base, label=label, **style)
+        if key != "continuous":   # the continuous panel's legend names its line; a long label would run into the next panel
+            ax.annotate(label, (hs[-1], base[-1]), xytext=(4, 0), textcoords="offset points", fontsize=6,
+                        color=style["color"], va="center", ha="left")
     if ref is not None:
         ax.plot(hs, ref, color=GREY, lw=1.0, ls="--", dashes=(4, 2), label=ref_label)
         ax.annotate(ref_label, (hs[-1], ref[-1]), xytext=(4, -7 if key == "natcond" else 0),
@@ -283,15 +301,16 @@ for ax, (key, spec) in zip(axes, PANELS.items()):
     ax.set_xlim(82, 248)
     ax.set_xlabel("Resolution turn $T$ (snapshot at turn 60)", fontsize=9)
     ax.set_ylabel(short_ylabels[key], fontsize=9)
-    top = max(q75.max(), max(ref) if ref is not None else 0)
+    top = max(q75.max(), max(ref) if ref is not None else 0, max(base) if base is not None else 0)
     ax.set_ylim(0, top * 1.28)
     prov_note(ax, "upper left")
     hz[key] = dict(set=spec["set"], metric=spec["col"], horizons=hs, mean_over_models=mean.tolist(),
                    iqr_q25=q25.tolist(), iqr_q75=q75.tolist(),
                    per_model={m: per_model[i].tolist() for i, m in enumerate(models)},
-                   reference=(dict(label=ref_label, values=ref) if ref is not None else None))
+                   reference=(dict(label=ref_label, values=ref) if ref is not None else None),
+                   baseline=base)
     print(f"{key:11s} horizon means: " + " ".join(f"{v:.3f}" for v in mean) + (" ref: " + " ".join(f"{v:.3f}" for v in ref) if ref else ""))
-axes[0].legend(loc="lower right", fontsize=7.5, handlelength=1.6, borderaxespad=0.3)
+axes[0].legend(loc="upper left", fontsize=7.5, handlelength=1.6, borderaxespad=0.3)
 save(fig, "fig_freeciv_horizon", dict(source=rel(ITEMS), panels=hz, provisional=PROV,
                                       notes="mean and interquartile range across the 24 per-model means at each resolution turn; snapshot at turn 60; natural conditionals exist only for T120-T210; bank reference = mean (0.5-q)^2 over that horizon's items; tails reference = mean KL(q||0.05); natcond reference = mean over models of the not-updating excess (p1 - p(Y|X))^2"))
 summary["fig_freeciv_horizon"] = hz
@@ -315,6 +334,9 @@ for mname, g in rb.groupby("model"):
     g = g.sort_values("band")
     ax.plot(g.q, g.p, color=LGREY, lw=0.6, zorder=2)
 ax.plot(pooled.q, pooled.p, color=GREEN, lw=1.6, marker="o", ms=3, zorder=3, label="pooled over 24 models")
+if BASE:   # the base rate's mean in each band, against the same mean q
+    bands = BASE["mid_range_bands"]
+    ax.plot([x["q"] for x in bands], [x["rate"] for x in bands], zorder=3, label="base rate", **capability_plot.BASELINE_STYLE)
 ax.plot([], [], color=LGREY, lw=0.6, label="one line per model")
 ax.plot([], [], color=GREY, ls="--", dashes=(4, 2), lw=0.8, label="perfect reliability")
 ax.set_xlim(0, 1); ax.set_ylim(0, 1)
