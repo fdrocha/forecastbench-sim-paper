@@ -91,15 +91,15 @@ for m in fc_models:
     for t, v in zip(FT, byh):
         assert abs(v - fw.loc[m, f"mirrors_{t}_excess_brier"]) < 6e-5, (m, t)
     lo, hi = [float(x) for x in re.findall(r"[-0-9.]+", ci)]
-    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}", fmt(est, 4), f"[{lo:.3f}, {hi:.3f}]"] + [fmt(v, 3) for v in byh])
+    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}", fmt(est, 4)] + [fmt(v, 3) for v in byh])
     m_rec[m] = dict(excess_brier=est, ci95=[lo, hi], by_horizon=dict(zip([str(t) for t in FT], byh)))
-write_tabular(TABLES / "freeciv_mirrors.tex", "lrrlrrrrr",
-              ["Model & ECI & Excess Brier & 95\\% CI & \\multicolumn{5}{c}{By horizon (turn)}",
-               "\\cmidrule(lr){5-9}",
-               " & & & & 90 & 120 & 150 & 180 & 210"],
+write_tabular(TABLES / "freeciv_mirrors.tex", "lrrrrrrr",
+              ["Model & ECI & Excess Brier & \\multicolumn{5}{c}{By horizon (turn)}",
+               "\\cmidrule(lr){4-8}",
+               " & & & 90 & 120 & 150 & 180 & 210"],
               rows, comment="FreeCiv mirrors set (50 binary questions with 0.95 <= q < 1, 10 per horizon). Source: SCORES.md "
                             "(sections 'Mirrors 50' and 'mirrors: excess_brier by horizon'), cross-checked against freeciv_results_wide.csv "
-                            "and score_items.csv. The 95% CI is the item-level interval printed in SCORES.md (bootstrap over items).")
+                            "and score_items.csv.")
 beat = [m for m in fc_models if m_rec[m]["excess_brier"] < flat05]
 rho_m, p_m, ci_m, nb = spearman_signed([fw.loc[m, "eci"] for m in fc_models], [m_rec[m]["excess_brier"] for m in fc_models])
 NUMBERS["freeciv"]["mirrors"] = {
