@@ -10,6 +10,7 @@ STEPS = ['micropolis', 'freeciv', 'starsim', 'combined']
 INPUTS = 'datasets/paper-inputs'
 FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
 FREECIV_RUN = 'run2_paper'
+FREECIV_CANDIDATES = 'datasets/freeciv-candidates-20261022'
 FREECIV_FRACTIONS = 'datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1/sets/draw_v1/selection_fractions_bank_tails_mirrors.json'
 
 def stage(inputs, paper):
@@ -32,11 +33,25 @@ def _commands(step, data, paper, tmp):
     """(env, commands) for a step; a command is an argv list or a callable."""
     py = sys.executable
     if step == 'micropolis':
-        return commands(step, data, paper, tmp, data/INPUTS/'micropolis')
+        # The baselines first, beside the inputs: analyze_paper.py draws them and delivers the JSON with the data.
+        env, cmds = commands(step, data, paper, tmp, data/INPUTS/'micropolis')
+        return env, [[py, str(ASSETS/'micropolis/scripts/micropolis_baselines.py'), '--datadir', str(tmp/'inputs'),
+                      '--out', str(tmp/'inputs'/'micropolis_baselines.json')]] + cmds
     if step == 'freeciv':
         src = data/FREECIV; results = src/'results'; A = ASSETS/'freeciv'
         env = _env(tmp); env.update(FBSIM_SOURCE_ROOT=str(src), FBSIM_RUN=FREECIV_RUN, FBSIM_PAPER_ROOT=str(paper))
-        return env, [[py, str(A/s), '--paper-root', str(paper)] for s in ['deliver_backing.py', 'make_freeciv_tables.py', 'make_freeciv_difficulty_table.py', 'make_freeciv_family_table.py']] + [
+        # The baselines first: the per-model table and the capability figure draw them. They pool the generator's
+        # candidates, which are private; without them the build keeps the archived JSON that stage() delivered.
+        baselines = []
+        if (data/FREECIV_CANDIDATES).is_dir():
+            archived = data/INPUTS/'freeciv/freeciv_baselines.json'
+            def deliver_freeciv_baselines():
+                shutil.copyfile(archived, paper/'data/freeciv/freeciv_baselines.json')
+            baselines = [[py, str(A/'make_freeciv_baselines.py'), '--sets', str(src/'sets/draw_v1'), '--reports', str(src/'reports'),
+                          '--candidates', str(data/FREECIV_CANDIDATES), '--scores', str(results/FREECIV_RUN/'scores_v1/score_items.csv.gz'),
+                          '--out', str(archived)], deliver_freeciv_baselines]
+        return env, baselines + [
+            [py, str(A/s), '--paper-root', str(paper)] for s in ['deliver_backing.py', 'make_freeciv_tables.py', 'make_freeciv_difficulty_table.py', 'make_freeciv_family_table.py']] + [
             [py, str(A/'make_freeciv_forecast_files.py'), '--results', str(results/FREECIV_RUN), '--sets', str(src/'sets/draw_v1'), '--out', str(paper/'data/freeciv')],
             [py, str(A/'make_freeciv_grouping.py'), '--one', str(results/'run1_2026-09-09'), '--grouped', str(results/FREECIV_RUN),
              '--shuffled', str(results/'run2_shuffled'), '--paper-root', str(paper)],
@@ -49,12 +64,17 @@ def _commands(step, data, paper, tmp):
             [py, str(A/'make_freeciv_macros.py'), '--paper-root', str(paper)]]
     if step == 'starsim':
         analysis = analysis_root(data, tmp/'analysis')
-        return _env(tmp), [[py, str(ASSETS/'starsim'/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
-                             '--audit-root', str(data/'datasets/starsim-audit/production_v1'), '--out', str(tmp/'generated')]]
+        # The baselines first, from the audit's outputs: integrate_fixed_state.py draws them in its figure and table.
+        audit = data/'datasets/starsim-audit/production_v1'
+        return _env(tmp), [[py, str(ASSETS/'starsim'/'starsim_baselines.py'), '--audit-root', str(audit), '--analysis-root', str(analysis),
+                            '--out', str(paper/'data/starsim/starsim_baselines.json')],
+                           [py, str(ASSETS/'starsim'/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
+                            '--audit-root', str(audit), '--out', str(tmp/'generated')]]
     C = ASSETS/'combined'
     return _env(tmp), [[py, str(C/'refit_combined.py'), '--paper-root', str(paper), '--out', str(tmp/'generated')],
                        [py, str(C/'make_roster_table.py'), '--paper-root', str(paper)],
-                       [py, str(C/'make_validation_tables.py'), '--paper-root', str(paper)]]
+                       [py, str(C/'make_validation_tables.py'), '--paper-root', str(paper)],
+                       [py, str(C/'make_baseline_table.py'), '--paper-root', str(paper)]]
 
 def run(steps, data, paper, allow_dirty=False):
     unknown = set(steps) - set(STEPS)
