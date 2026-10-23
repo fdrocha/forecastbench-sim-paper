@@ -109,6 +109,7 @@ Usage:
 
 import argparse
 import csv
+import json
 import os
 import shutil
 import sys
@@ -181,8 +182,15 @@ CAPABILITY_FIG_NAME = "fig_micropolis_capability.pdf"
 # models, and an orange for highlights.
 POINT_COLOR = capability_plot.POINT_COLOR
 EXTREME_COLOR = "#e8632c"
+# The base rate's line in the by-horizon figure, apart from the orange best model.
+BASELINE_STYLE = capability_plot.BASELINE_STYLE
 
 MACROS_NAME = "micropolis-macros.tex"
+
+# The baselines' scores, which micropolis_baselines.py writes beside the
+# gathered data before this script runs. Optional: without it the capability
+# figure and the per-model table carry no base rate.
+BASELINES_JSON_NAME = "micropolis_baselines.json"
 
 # The by-horizon figure the appendix places, and the three per-model tables it
 # \input. Generated here so a rerun moves them with the rest of the paper's
@@ -709,7 +717,10 @@ def paper_csvs(datadir: Path) -> list[Path]:
         p
         for p in datadir.iterdir()
         if p.is_file()
-        and (p.suffix in (".csv", ".txt") or p.name == REPLAYS_ARCHIVE_NAME)
+        and (
+            p.suffix in (".csv", ".txt")
+            or p.name in (REPLAYS_ARCHIVE_NAME, BASELINES_JSON_NAME)
+        )
     )
 
 
@@ -968,6 +979,7 @@ def draw_capability_figure(
     path: Path,
     found: dict[str, object],
     model_bands: dict[str, tuple],
+    references: dict[str, float] | None = None,
 ) -> Path | None:
     """The article's capability figure: three ECI scatters side by side.
 
@@ -1006,6 +1018,7 @@ def draw_capability_figure(
                 ylabel,
                 letter,
                 model_bands.get(figname),
+                (references or {}).get(name),
             )
         path.parent.mkdir(parents=True, exist_ok=True)
         capability_plot.save(fig, path)
@@ -1284,7 +1297,7 @@ def draw_bands_figure(path: Path, binary: list[dict]) -> Path | None:
 
 
 def draw_horizon_figure(
-    path: Path, binary: list[dict], names: dict[str, str]
+    path: Path, binary: list[dict], names: dict[str, str], baselines: dict | None = None
 ) -> Path | None:
     """Each binary score by forecast horizon, mid-range and tail.
 
@@ -1377,6 +1390,16 @@ def draw_horizon_figure(
                 ms=2.5,
                 label=f"{tex_escape(names.get(best, best))} (best overall)",
             )
+            # The base rate at each horizon, which the models are compared with.
+            base = (baselines or {}).get("binary_by_horizon")
+            part = "mid" if section == MID_RANGE else "tail"
+            if base:
+                ax.plot(
+                    xs,
+                    [base[h][part] for h in HORIZONS],
+                    **BASELINE_STYLE,
+                    label="Base rate",
+                )
             ax.set_xticks(xs)
             ax.set_xticklabels([h.rstrip("y") for h in HORIZONS])
             ax.set_xlabel("Forecast horizon (game years)")
@@ -1385,7 +1408,11 @@ def draw_horizon_figure(
             # Headroom for the legend, which sits top-left over the band.
             ax.set_ylim(
                 0,
-                max(np.percentile(stack, 75, axis=0).max(), stack.mean(axis=0).max())
+                max(
+                    np.percentile(stack, 75, axis=0).max(),
+                    stack.mean(axis=0).max(),
+                    max(base[h][part] for h in HORIZONS) if base else 0,
+                )
                 * 1.38,
             )
             ax.spines[["top", "right"]].set_visible(False)
@@ -1427,6 +1454,7 @@ def _draw_panel(
     ylabel: str,
     letter: str,
     band: tuple[float, float] | None,
+    reference: float | None = None,
 ) -> None:
     """One panel: the models' (ECI, mean score), drawn by capability_plot.draw_panel.
 
@@ -1450,6 +1478,7 @@ def _draw_panel(
         capability_plot.rho_note(adjusted(c.rho), band),
         ylabel,
         f"({letter}) {name}",
+        reference,
     )
 
 
@@ -1962,8 +1991,9 @@ def models_table(
     continuous: list[dict],
     coverage: list[dict],
     names: dict[str, str],
+    baselines: dict | None = None,
 ) -> str:
-    """Per-model scores pooled over horizons, with parse rates.
+    """Per-model scores pooled over horizons, with parse rates, and the base rate's binary scores.
 
     One row per model of the panel, ordered by ECI as the article's tables
     are: the two binary scores, the continuous one, and the share of each
@@ -1977,6 +2007,14 @@ def models_table(
         )
         for r in coverage
     }
+
+    def beats(value, key):
+        """The cell, bold when the score is below the base rate's."""
+        text = cell(value)
+        if baselines and value is not None and value < baselines[key]:
+            return rf"\textbf{{{text}}}"
+        return text
+
     rows = []
     for m in sorted(models_in_order(binary), key=lambda m: -(eci_of(m) or 0)):
         rows.append(
@@ -1984,9 +2022,13 @@ def models_table(
                 [
                     tex_escape(names.get(m, m)),
                     cell(eci_of(m), "{:.1f}"),
-                    cell(_mean_of(mid, m, None, "excess_brier")),
-                    cell(_mean_of(tail, m, None, "excess_bits")),
-                    cell(_mean_of(continuous, m, None, "excess_ncrps")),
+                    beats(
+                        _mean_of(mid, m, None, "excess_brier"), "mid_range_excess_brier"
+                    ),
+                    beats(_mean_of(tail, m, None, "excess_bits"), "tail_excess_bits"),
+                    beats(
+                        _mean_of(continuous, m, None, "excess_ncrps"), "excess_ncrps"
+                    ),
                     cell(parsed.get((m, "binary")), "{:.1f}"),
                     cell(parsed.get((m, "continuous")), "{:.1f}"),
                 ]
@@ -2006,33 +2048,70 @@ def models_table(
             r" & & Mid-range & Tail & & Binary & Continuous \\",
             r"\midrule",
             *rows,
+            *(
+                [
+                    r"\midrule",
+                    f"Baseline & & {cell(baselines['mid_range_excess_brier'])}"
+                    f" & {cell(baselines['tail_excess_bits'])} & {cell(baselines['excess_ncrps'])} & & \\\\",
+                ]
+                if baselines
+                else []
+            ),
             r"\bottomrule",
             r"\end{tabular}",
         ],
         "Per model, horizons pooled. Sources: binary_forecasts.csv,"
-        " continuous_forecasts.csv, model_coverage.csv.",
+        " continuous_forecasts.csv, model_coverage.csv, micropolis_baselines.json."
+        " Baseline: the base rate (binary) and the climatological change (continuous); bold: below it.",
     )
 
 
-def horizon_table(binary: list[dict], names: dict[str, str]) -> str:
-    """Each binary score by horizon, mid-range then tail."""
+def bold_below(value, base, fmt: str = "{:.4f}") -> str:
+    """A cell, bold when a baseline is given and the score is below it."""
+    text = cell(value, fmt)
+    return (
+        rf"\textbf{{{text}}}"
+        if base is not None and value is not None and value < base
+        else text
+    )
+
+
+def horizon_table(
+    binary: list[dict], names: dict[str, str], baselines: dict | None = None
+) -> str:
+    """Each binary score by horizon, mid-range then tail, with the base rate's row and bold scores below it."""
     mid = [r for r in binary if r["section"] == MID_RANGE]
     tail = [r for r in binary if r["section"] == TAIL]
+    base = (baselines or {}).get("binary_by_horizon", {})
     rows = []
     for m in sorted(models_in_order(binary), key=lambda m: -(eci_of(m) or 0)):
         cells = [tex_escape(names.get(m, m)), cell(eci_of(m), "{:.1f}")]
-        for src, key in ((mid, "excess_brier"), (tail, "excess_bits")):
-            cells += [cell(_mean_of(src, m, h, key)) for h in HORIZONS]
+        for src, key, part in (
+            (mid, "excess_brier", "mid"),
+            (tail, "excess_bits", "tail"),
+        ):
+            cells += [
+                bold_below(_mean_of(src, m, h, key), base.get(h, {}).get(part))
+                for h in HORIZONS
+            ]
         rows.append(" & ".join(cells) + r" \\")
+    if base:
+        rows += [
+            r"\midrule",
+            " & ".join(
+                ["Baseline", ""]
+                + [cell(base[h][part]) for part in ("mid", "tail") for h in HORIZONS]
+            )
+            + r" \\",
+        ]
     return table_file(
         [
             r"\setlength{\tabcolsep}{3pt}",
             r"\begin{tabular}{lrrrrrrrrr}",
             r"\toprule",
             (
-                r"Model & ECI & \multicolumn{4}{c}{Mid-range excess Brier, by"
-                r" horizon (years)} & \multicolumn{4}{c}{Tail excess bits, by"
-                r" horizon (years)} \\"
+                r"Model & ECI & \multicolumn{4}{c}{Mid-range excess Brier}"
+                r" & \multicolumn{4}{c}{Tail excess bits} \\"
             ),
             r"\cmidrule(lr){3-6}\cmidrule(lr){7-10}",
             r" & & 3 & 5 & 7 & 10 & 3 & 5 & 7 & 10 \\",
@@ -2041,17 +2120,24 @@ def horizon_table(binary: list[dict], names: dict[str, str]) -> str:
             r"\bottomrule",
             r"\end{tabular}",
         ],
-        "Per model and horizon. Source: binary_forecasts.csv.",
+        "Per model and horizon. Source: binary_forecasts.csv; base rate: micropolis_baselines.json; bold: below it.",
     )
 
 
-def continuous_table(continuous: list[dict], names: dict[str, str]) -> str:
-    """Excess nCRPS by horizon and by metric."""
+def continuous_table(
+    continuous: list[dict], names: dict[str, str], baselines: dict | None = None
+) -> str:
+    """Excess nCRPS by horizon and by metric, with the baseline's row and bold scores below it."""
+    by_h = (baselines or {}).get("continuous_by_horizon", {})
+    by_m = (baselines or {}).get("continuous_by_metric", {})
     rows = []
     for m in sorted(models_in_order(continuous), key=lambda m: -(eci_of(m) or 0)):
         cells = [tex_escape(names.get(m, m)), cell(eci_of(m), "{:.1f}")]
         cells += [
-            cell(_mean_of(continuous, m, h, "excess_ncrps"), "{:.3f}") for h in HORIZONS
+            bold_below(
+                _mean_of(continuous, m, h, "excess_ncrps"), by_h.get(h), "{:.3f}"
+            )
+            for h in HORIZONS
         ]
         for metric, _ in METRIC_COLUMNS:
             vals = [
@@ -2059,8 +2145,22 @@ def continuous_table(continuous: list[dict], names: dict[str, str]) -> str:
                 for r in continuous
                 if r["model_id"] == m and r["metric"] == metric
             ]
-            cells.append(cell(sum(vals) / len(vals) if vals else None, "{:.3f}"))
+            cells.append(
+                bold_below(
+                    sum(vals) / len(vals) if vals else None, by_m.get(metric), "{:.3f}"
+                )
+            )
         rows.append(" & ".join(cells) + r" \\")
+    if by_h and by_m:
+        rows += [
+            r"\midrule",
+            " & ".join(
+                ["Baseline", ""]
+                + [cell(by_h[h], "{:.3f}") for h in HORIZONS]
+                + [cell(by_m[metric], "{:.3f}") for metric, _ in METRIC_COLUMNS]
+            )
+            + r" \\",
+        ]
     heads = " & ".join(h for _, h in METRIC_COLUMNS)
     return table_file(
         [
@@ -2079,7 +2179,7 @@ def continuous_table(continuous: list[dict], names: dict[str, str]) -> str:
             r"\end{tabular}",
         ],
         "Per model, excess nCRPS by horizon and metric."
-        " Source: continuous_forecasts.csv.",
+        " Source: continuous_forecasts.csv; baseline: micropolis_baselines.json; bold: below it.",
     )
 
 
@@ -4077,6 +4177,7 @@ def write_tables(
     coverage: list[dict],
     names: dict[str, str],
     extra: dict[str, str] | None = None,
+    baselines: dict | None = None,
 ) -> list[Path]:
     """The appendix tables, as files the article \\inputs.
 
@@ -4084,9 +4185,9 @@ def write_tables(
     TABLE_NAMES.
     """
     built = {
-        "models": models_table(binary, continuous, coverage, names),
-        "horizon": horizon_table(binary, names),
-        "continuous": continuous_table(continuous, names),
+        "models": models_table(binary, continuous, coverage, names, baselines),
+        "horizon": horizon_table(binary, names, baselines),
+        "continuous": continuous_table(continuous, names, baselines),
         **(extra or {}),
     }
     out = []
@@ -4443,6 +4544,10 @@ def main() -> None:
 
     print_headlines(found)
     names = display_names(args.datadir / MODEL_SCORES_CSV_NAME)
+    baselines_path = args.datadir / BASELINES_JSON_NAME
+    baselines = (
+        json.loads(baselines_path.read_text()) if baselines_path.exists() else None
+    )
     by_horizon = correlations_by_horizon(specs)
     fb = correlations_for(specs, PREDICTORS[1][2])
     fb_cities = predictor_city_cis(specs, PREDICTORS[1][2])
@@ -4638,6 +4743,7 @@ def main() -> None:
             "knowledge": knowledge_table(knowledge, names, know_models),
             "knowledge_corr": knowledge_corr_table(know_corr),
         },
+        baselines,
     )
     cells = write_cells(args.datadir, binary, continuous)
     # The article's own figure, which is not one of the extra ones: --no-extra
@@ -4646,9 +4752,17 @@ def main() -> None:
         args.outdir / CAPABILITY_FIG_NAME,
         found,
         model_bands_by_figure(found),
+        baselines
+        and {
+            "Mid-range": baselines["mid_range_excess_brier"],
+            "Tail": baselines["tail_excess_bits"],
+            "Continuous": baselines["excess_ncrps"],
+        },
     )
 
-    horizon_fig = draw_horizon_figure(args.outdir / HORIZON_FIG_NAME, binary, names)
+    horizon_fig = draw_horizon_figure(
+        args.outdir / HORIZON_FIG_NAME, binary, names, baselines
+    )
     bands_fig = draw_bands_figure(args.outdir / BANDS_FIG_NAME, binary)
     batching_fig = draw_batching_figure(
         args.outdir / BATCHING_FIG_NAME,

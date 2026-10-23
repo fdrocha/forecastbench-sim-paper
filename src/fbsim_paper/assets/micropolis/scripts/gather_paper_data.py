@@ -16,6 +16,8 @@ actually computed at, not a per-model mean:
 - city_metric_scales.csv: one row per city of the continuous config, the mean
   each metric took over the turns up to the first snapshot, floored at a
   per-metric minimum so a quiet city cannot give a near-zero scale.
+- report_history.csv: the HISTORY table of each continuous snapshot's world
+  report, scale metrics only, for the paper's continuous baselines.
 - model_scores.csv, copied verbatim from the package's datafiles/, so the
   paper's directory carries the ECI and ForecastBench numbers its figures plot
   against rather than depending on the repo's copy at drawing time.
@@ -196,6 +198,12 @@ MODEL_SCORES_CSV_NAME = "model_scores.csv"
 
 SCALES_CSV_NAME = "city_metric_scales.csv"
 SCALES_COLUMNS = ["city", *SCALE_METRICS]
+
+# The HISTORY table of each continuous snapshot's world report, as the models
+# read it, for the paper's continuous baselines (the quantity's value at the
+# snapshot).
+HISTORY_CSV_NAME = "report_history.csv"
+HISTORY_COLUMNS = ["city", "snapshot_turn", "turn", *SCALE_METRICS]
 
 # Prompted against parsed, per model and eval. The forecast CSVs hold only
 # scored rows, so a parse rate is not recoverable from them: a model that
@@ -1093,6 +1101,43 @@ def scale_rows(cfg: Config) -> list[dict]:
     return [{"city": city, **values} for city, values in scales.items()]
 
 
+def history_rows(cfg: Config) -> list[dict]:
+    """One row per HISTORY line of each snapshot's world report, scale metrics only."""
+    labels = {g.METRIC_LABELS[m]: m for m in SCALE_METRICS}
+    scenarios = get_base_scenarios(
+        seed=cfg.get_seed(None),
+        cities=cfg.get_cities(None),
+        disasters=cfg.get_disasters(None),
+    )
+    rows = []
+    for s in scenarios:
+        for snap in cfg.get_int_list("snapshot_turns"):
+            path = s.get_data_file_path(
+                f"worldreport-{cfg.get_label()}-T{snap}", ext="txt"
+            )
+            if not path.exists():
+                sys.exit(
+                    f"[error] no world report {path}\n  run the continuous eval first"
+                )
+            lines = path.read_text().splitlines()
+            start = next(i for i, x in enumerate(lines) if x.startswith("HISTORY")) + 2
+            header = lines[start].split(",")
+            for line in lines[start + 1 :]:
+                if not line.strip():
+                    break
+                cells = dict(zip(header, line.split(",")))
+                rows.append(
+                    {
+                        "city": s.city_name,
+                        "snapshot_turn": snap,
+                        "turn": int(cells["Turn"]),
+                        **{m: cells[label] for label, m in labels.items()},
+                    }
+                )
+    print(f"history:    {len(rows)} report rows")
+    return rows
+
+
 @main_with_config
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
@@ -1154,6 +1199,7 @@ def main() -> None:
     binary, binary_coverage = binary_rows(binary_cfg)
     continuous, continuous_coverage = continuous_rows(continuous_cfg)
     scales = scale_rows(continuous_cfg)
+    history = history_rows(continuous_cfg)
     usage = usage_rows("binary", binary_cfg) + usage_rows("continuous", continuous_cfg)
     print()
     batching, batching_runs = batching_rows(args.batching_configs)
@@ -1169,6 +1215,7 @@ def main() -> None:
         (BINARY_CSV_NAME, BINARY_COLUMNS, binary),
         (CONTINUOUS_CSV_NAME, CONTINUOUS_COLUMNS, continuous),
         (SCALES_CSV_NAME, SCALES_COLUMNS, scales),
+        (HISTORY_CSV_NAME, HISTORY_COLUMNS, history),
         (
             COVERAGE_CSV_NAME,
             COVERAGE_COLUMNS,
