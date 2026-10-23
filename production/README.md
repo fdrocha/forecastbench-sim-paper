@@ -27,7 +27,7 @@ The producer is Jaeho Lee's `freeciv-v3` branch of `forecastingresearch/forecast
 
 The rest of that commit's files are in the private data archive at the same relative paths under `datasets/freeciv-source/worlds/freeciv/fbsim_v3`: the question sets of draw v1.8 with truth and the continuous normalization constants (`sets/draw_v1/`), the eight turn-60 reports the models read (`reports/seed*/turn_060_report.txt`), the model panels (`run/models_v1.csv`, `run/models_v2.csv`) and the replay run's corpus docs (`corpus_docs/`, including `CHANNEL_READINESS.md`, also at `run/` in the producer). The branch's `README.md`, `sets/draw_v1/README.md` and the selection fractions behind the inverse-selection weights (`sets/draw_v1/selection_fractions_bank_tails_mirrors.json`) are under `datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1`.
 
-Raw responses, per-item scores and replay outcomes are in the private data archive (`datasets/freeciv-source` and `datasets/freeciv-source-deliveries`). The candidate pools and per-world pickles were not committed and are not in the archive. Analysis scripts behind the paper's FreeCiv numbers are in `src/fbsim_paper/assets/freeciv`.
+Raw responses, per-item scores and replay outcomes are in the private data archive (`datasets/freeciv-source` and `datasets/freeciv-source-deliveries`). The per-world pickles were not committed and are not in the archive; the candidate questions in them are, as `datasets/freeciv-candidates-20261022` (exported by `src/fbsim_paper/assets/freeciv/export_candidates.py`). Analysis scripts behind the paper's FreeCiv numbers are in `src/fbsim_paper/assets/freeciv`.
 
 ## Not here
 
