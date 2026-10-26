@@ -12,7 +12,7 @@ This repository is the home for the paper's analysis, including the combined-sco
 | Paper analysis: selection, normalization, aggregation, tables, figures | this repository, `src/` |
 | How the paper's inputs were produced: production configs, seeds, prompts, model panels, producer scripts | this repository, [`production/`](production/README.md) |
 | Manuscript text and the generated files it reads | the manuscript repository (Overleaf); `fbsim-paper build` writes the generated files |
-| Inputs of the manuscript build: Micropolis's gathered forecasts, the model-name list, Starsim's pre-repair scores | private data archive: `datasets/paper-inputs` while the paper changes, frozen as `datasets/paper-inputs-YYYYMMDD` for each release |
+| Inputs of the manuscript build: Micropolis's gathered forecasts, the model-name list, Starsim's pre-repair scores | private data archive: `datasets/paper-inputs`, frozen with the archive version of each paper version |
 | Raw provider responses, simulator outputs, datasets, human-subject records, credentials | private data archive, never Git |
 
 ## Install
@@ -50,7 +50,7 @@ fbsim-paper build micropolis combined  # only these steps (always run in that or
 2. It copies each file of `$FBSIM_DATA_ROOT/datasets/paper-inputs` to the same path under the manuscript's `data/`, where the content differs. That folder is the working copy of the build's own inputs (the others are versioned archive folders, read in place); the manuscript keeps copies, so edit them in the archive, not in the manuscript.
 3. It runs each step's scripts against the manuscript checkout, writing over the files they generate. Every table is written whole; nothing reads or edits a `.tex` file.
    - Micropolis: `analyze_paper.py`, from the gathered CSVs in `paper-inputs/micropolis`: macros, appendix tables, figures and the CSVs in `data/micropolis/`; `micropolis_baselines.py`, run first, scores the baselines (`data/micropolis/micropolis_baselines.json`), which the capability figure and the per-model table draw.
-   - FreeCiv: from the archived run (`freeciv-source`, run `run2_paper`): the backing files of `data/freeciv/`, the appendix tables, the per-forecast files, the comparison with one question per prompt (`make_freeciv_grouping.py`), the reasoning-effort check, the validation statistics, the figures and the prose macros (`make_freeciv_macros.py`). `selection_weights.py` turns Jaeho Lee's selection fractions (`freeciv-source-deliveries`) into selection weights for the mid-range questions (`data/freeciv/freeciv_selection_weights.csv`), with which `make_freeciv_macros.py` writes the Appendix C comparison with equal weights. `make_freeciv_baselines.py`, run first, scores the baselines from the generator's candidate questions (`freeciv-candidates-20261022`, exported once from the generator's pickles by `export_candidates.py`) and the turn-60 reports. The candidates hold the truth of questions that were never asked, so a public package must leave them out.
+   - FreeCiv: from the archived run (`freeciv-source`, run `run2_paper`): the backing files of `data/freeciv/`, the appendix tables, the per-forecast files, the comparison with one question per prompt (`make_freeciv_grouping.py`), the reasoning-effort check, the validation statistics, the figures and the prose macros (`make_freeciv_macros.py`). `selection_weights.py` turns Jaeho Lee's selection fractions (`freeciv-source-deliveries`) into selection weights for the mid-range questions (`data/freeciv/freeciv_selection_weights.csv`), with which `make_freeciv_macros.py` writes the Appendix C comparison with equal weights. `make_freeciv_baselines.py`, run first, scores the baselines from the generator's candidate questions (`freeciv-candidates`, exported once from the generator's pickles by `export_candidates.py`) and the turn-60 reports. The candidates hold the truth of questions that were never asked, so a public package must leave them out.
    - Starsim: `integrate_fixed_state.py`, from the cached calls and the fixed-state audit (`analysis-original`, `starsim-audit`): Starsim's scores, appendix tables and figures; `starsim_baselines.py`, run first from the audit's outputs, scores the baselines and the SIR forecast (`data/starsim/starsim_baselines.json`), which its figure and table draw.
    - Combined: from the other three steps' files in the manuscript's `data/`, `refit_combined.py` refits the combined score (with its figure, the rank tables, the fixed-state uncertainty table and the Appendix C sensitivity macros), `make_roster_table.py` and `make_validation_tables.py` write the roster and the two validation tables, and `make_baseline_table.py` writes the baselines' prose macros and the appendix tables of binary and continuous alternatives. Rerun it after changing any world.
 4. It prints `git status` of the manuscript's `data/` and `figures/`. Review the diff there and commit both repositories.
@@ -64,11 +64,11 @@ There are no hash checks and no snapshot copy, so `build` works while code and i
 Not implemented yet; this is the agreed plan. When a version of the paper is released:
 
 1. Commit and push the manuscript after a `fbsim-paper build` that leaves nothing to commit.
-2. In the data archive, freeze `datasets/paper-inputs` as `datasets/paper-inputs-YYYYMMDD` and the manuscript commit as `datasets/paper-<commit>`, and add a manifest under `manifests/` with the SHA-256 of every file the build reads (the frozen inputs and the versioned folders it reads in place) and of the frozen manuscript, plus a `CHANGES.md` entry. Frozen folders are never edited afterwards.
+2. In the data archive, add the manuscript commit as `datasets/paper-<commit>` and a manifest under `manifests/` with the SHA-256 of every file the build reads and of the frozen manuscript, and bring `CHANGES.md` up to date (it describes the archive's difference from v1).
 3. Point `validate` and the reproduce commands at that manifest: they then build from the frozen inputs into a disposable copy of the frozen manuscript and compare every generated file with it. Until this happens, they target the f214afe3 release (see below).
-4. Cut a new version of the archive bundle.
+4. Cut and store the new version of the archive bundle; it is frozen from then on.
 
-`datasets/paper-inputs` stays the working copy for the next version.
+The working archive stays editable for the next version, under the rules in `AGENTS.md`.
 
 ## Cached reproduction requires restricted external inputs
 
@@ -79,6 +79,7 @@ fbsim-paper validate
 fbsim-paper reproduce --output "$NEW_STARSIM_OUTPUT"
 fbsim-paper reproduce-freeciv --output "$NEW_FREECIV_OUTPUT"
 fbsim-paper reproduce-micropolis --output "$NEW_MICROPOLIS_OUTPUT"
+fbsim-paper check-archive   # v1 files unchanged; lists the files added since v1
 ```
 
 Each command takes `--data-root` or `FBSIM_DATA_ROOT` (see Settings). Each output directory must be new. Validation checks 487 frozen inputs and scorer hashes. Missing inputs fail explicitly. Routes read cached inputs and create disposable outputs; they do not rerun simulators, call models or edit the manuscript. Python network access is guarded. Archival helper scripts are not production entrypoints.

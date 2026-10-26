@@ -10,7 +10,7 @@ STEPS = ['micropolis', 'freeciv', 'starsim', 'combined']
 INPUTS = 'datasets/paper-inputs'
 FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
 FREECIV_RUN = 'run2_paper'
-FREECIV_CANDIDATES = 'datasets/freeciv-candidates-20261022'
+FREECIV_CANDIDATES = 'datasets/freeciv-candidates'
 FREECIV_FRACTIONS = 'datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1/sets/draw_v1/selection_fractions_bank_tails_mirrors.json'
 
 def stage(inputs, paper):
