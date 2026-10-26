@@ -40,16 +40,13 @@ def _commands(step, data, paper, tmp):
     if step == 'freeciv':
         src = data/FREECIV; results = src/'results'; A = ASSETS/'freeciv'
         env = _env(tmp); env.update(FBSIM_SOURCE_ROOT=str(src), FBSIM_RUN=FREECIV_RUN, FBSIM_PAPER_ROOT=str(paper))
-        # The baselines first: the per-model table and the capability figure draw them. They pool the generator's
-        # candidates, which are private; without them the build keeps the archived JSON that stage() delivered.
-        baselines = []
-        if (data/FREECIV_CANDIDATES).is_dir():
-            archived = data/INPUTS/'freeciv/freeciv_baselines.json'
-            def deliver_freeciv_baselines():
-                shutil.copyfile(archived, paper/'data/freeciv/freeciv_baselines.json')
-            baselines = [[py, str(A/'make_freeciv_baselines.py'), '--sets', str(src/'sets/draw_v1'), '--reports', str(src/'reports'),
-                          '--candidates', str(data/FREECIV_CANDIDATES), '--scores', str(results/FREECIV_RUN/'scores_v1/score_items.csv.gz'),
-                          '--out', str(archived)], deliver_freeciv_baselines]
+        # The baselines first, from the generator's candidates: the per-model table and the capability figure draw them.
+        out = tmp/'freeciv_baselines.json'
+        def deliver_freeciv_baselines():
+            shutil.copyfile(out, paper/'data/freeciv/freeciv_baselines.json')
+        baselines = [[py, str(A/'make_freeciv_baselines.py'), '--sets', str(src/'sets/draw_v1'), '--reports', str(src/'reports'),
+                      '--candidates', str(data/FREECIV_CANDIDATES), '--scores', str(results/FREECIV_RUN/'scores_v1/score_items.csv.gz'),
+                      '--out', str(out)], deliver_freeciv_baselines]
         return env, baselines + [
             [py, str(A/s), '--paper-root', str(paper)] for s in ['deliver_backing.py', 'make_freeciv_tables.py', 'make_freeciv_difficulty_table.py', 'make_freeciv_family_table.py']] + [
             [py, str(A/'make_freeciv_forecast_files.py'), '--results', str(results/FREECIV_RUN), '--sets', str(src/'sets/draw_v1'), '--out', str(paper/'data/freeciv')],
