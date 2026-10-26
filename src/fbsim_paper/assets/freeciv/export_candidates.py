@@ -13,7 +13,7 @@ import argparse, csv, json, pickle
 from pathlib import Path
 import numpy as np
 
-PARAMS = ("k", "metric", "gov", "tech", "wonder", "kind", "f")
+PARAMS = ("k", "metric", "x", "gov", "tech", "wonder", "kind", "f")
 DRAWN = {"P1_civ_conquests", "P2_civ_losses", "P3_civ_founds", "P5_techs_at_T", "P6_world_techs", "NC5_world_captures",
          "NC14_world_wonders", "S7_world_razings", "NC1_value_at_T"}   # draw_v1.py: COUNT_FAMS and value questions
 

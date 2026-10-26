@@ -5,7 +5,9 @@
         --scores SCORE_ITEMS --out freeciv_baselines.json
 
 Binary: the base rate, the mean q of the candidates with the same question template (family and the parameters in
-its text, not the civilizations) at the same horizon in the other seven games, over every candidate with 0 < q < 1.
+its text, not the civilizations) at the same horizon in the other seven games, over every candidate with 0 < q < 1. A
+threshold x is matched as its ratio to the civilization's turn-60 value, binned on a log scale; military units, often
+zero at turn 60, match on x itself.
 Natural conditionals: that base rate of Y, ignoring the revealed fact. Continuous: the turn-60 value from the report
 (zero for counts of events after turn 60) plus the other games' change over the same horizon, over the eligible
 continuous candidates. Also scores the alternatives the appendix compares, and the models' forecast levels per set.
@@ -21,7 +23,9 @@ from fbsim_paper.baselines import base_rates, change_quantiles
 
 PARAMS = ("k", "metric", "gov", "tech", "wonder", "kind", "f")
 LEVEL = {"NC1_value_at_T", "P5_techs_at_T", "P6_world_techs"}                      # the rest count events after turn 60
-COLUMN = {"cities_count": "Cities", "population": "Population", "scores": "Score", "territory_size": "Territory"}
+COLUMN = {"cities_count": "Cities", "population": "Population", "scores": "Score", "territory_size": "Territory",
+          "treasury": "Treasury", "techs_known": "Techs"}
+RATIO_BIN = 0.5   # width of the log(x / turn-60 value) bins of the threshold questions
 TAIL, TOP = 0.05, 0.95
 
 ap = argparse.ArgumentParser()
@@ -33,11 +37,30 @@ ap.add_argument("--out", type=Path, required=True)
 a = ap.parse_args()
 load = lambda name: json.load(open(a.sets / name))
 
+
+def turn60(world):
+    """{civ id: {report column: value}} from the report's CURRENT STATE table."""
+    lines = open(a.reports / world / "turn_060_report.txt").read().splitlines()
+    i = lines.index("CURRENT STATE (TURN 60)") + 1
+    head = [h.strip() for h in lines[i].split("|")]
+    return {r[0]: dict(zip(head, r)) for r in ([c.strip() for c in x.split("|")] for x in lines[i + 2:]) if len(r) == len(head)}
+
+
+state = {}
+at60 = lambda c, column: float(state.setdefault(c["world"], turn60(c["world"]))[c["subj"].split()[0]][column])
+
+
+def threshold(c):
+    """A threshold question's x, as the log-scale bin of its ratio to the turn-60 value; x for military units."""
+    if not c["x"] or c["metric"] == "military_units_count": return c["x"]
+    return round(float(np.log(int(c["x"]) / at60(c, COLUMN[c["metric"]]))) / RATIO_BIN)
+
+
 # ---- binary: base rates over the candidates; the asked questions are among them
 cand = list(csv.DictReader(open(a.candidates / "binary_candidates.csv")))
 for c in cand:
     c["q"] = float(c["q"]); c["T"] = int(c["T"])
-template = lambda c: (c["family"],) + tuple(c[p] for p in PARAMS)
+template = lambda c: (c["family"], threshold(c)) + tuple(c[p] for p in PARAMS)
 by_id = {c["id"]: c for c in cand}
 sets = {"bank_750.json": "mid", "tails_300.json": "tail", "mirrors_50.json": "mirror", "natcond_extra_turn1.json": "extra"}
 asked = [dict(by_id[it["id"]], set=s) for name, s in sets.items() for it in load(name)]
@@ -108,24 +131,16 @@ natcond_true_py = [(c["p"] - c["p_given"]) ** 2 for c in cells]
 natcond_by = lambda k: {v: float(np.mean([x for c, x in zip(cells, natcond) if c[k] == v])) for v in sorted({c[k] for c in cells})}
 
 # ---- continuous: climatological change over the eligible candidates
-def turn60(world):
-    """{civ id: {report column: value}} from the report's CURRENT STATE table."""
-    lines = open(a.reports / world / "turn_060_report.txt").read().splitlines()
-    i = lines.index("CURRENT STATE (TURN 60)") + 1
-    head = [h.strip() for h in lines[i].split("|")]
-    return {r[0]: dict(zip(head, r)) for r in ([c.strip() for c in x.split("|")] for x in lines[i + 2:]) if len(r) == len(head)}
-
-
 C = np.load(a.candidates / "continuous_candidates.npz")
-state, norm = {}, load("continuous_norm_constants.json")["constants"]
+norm = load("continuous_norm_constants.json")["constants"]
 cont = {}
 for i, w, fam, metric, T, subj, ys in zip(C["id"], C["world"], C["family"], C["metric"], C["T"], C["subj"], C["values"]):
     if fam not in LEVEL:
         last = 0.0
     else:
         s = state.setdefault(w, turn60(w))
-        last = (sum(float(c["Techs"]) for c in s.values()) if fam == "P6_world_techs"
-                else float(s[subj.split()[0]][COLUMN[metric] if fam == "NC1_value_at_T" else "Techs"]))
+        last = (sum(float(c[COLUMN["techs_known"]]) for c in s.values()) if fam == "P6_world_techs"
+                else float(s[subj.split()[0]][COLUMN[metric if fam == "NC1_value_at_T" else "techs_known"]]))
     key = fam + ("/" + metric if fam == "NC1_value_at_T" else "")
     cont[str(i)] = dict(world=str(w), key=key, T=int(T), ys=ys, last=last, change=ys - last, c=norm[key]["constant"])
 pool = defaultdict(list)
