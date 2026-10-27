@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 from fbsim_benchmark.scoring.pandemic import crps5, kl_bits
 from paths import analysis_modules, use_cached_runs
+from fbsim_paper.capability_plot import BASELINE_STYLE
 ANALYSIS_ROOT, bt, fg = analysis_modules()
 import matplotlib.pyplot as plt  # noqa: E402
 QK, TAU = bt.QKEYS, (0.10, 0.25, 0.50, 0.75, 0.90); CLIP, TAIL = 1e-3, 0.05
@@ -109,7 +110,8 @@ def skill_annotation(rho, lo, hi, n):
             f"[{-hi:.2f}, {-lo:.2f}], $n$ = {n}")
 
 
-def fig_unconditional(long, out, C):
+def fig_unconditional(long, out, C, refs=None):
+    """refs: the continuous references (climatological change, SIR forecast), drawn as lines the caption names."""
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.2, 2.9)); fig.subplots_adjust(wspace=0.32)
     b = series(long, "binary", "unconditional", "-"); fg.scatter(a1, b, n_top=2, n_resid=4, n_low=0); rho, lo, hi, n = fg.rho_ci(b, seed=0)
     for label in a1.texts:
@@ -135,6 +137,9 @@ def fig_unconditional(long, out, C):
                         arrowprops=dict(arrowstyle="-", color=fg.GREY, lw=0.4))
     rho2, lo2, hi2, n2 = fg.rho_ci(c, seed=0)
     a2.axhline(0, ls="--", lw=0.6, color=fg.GREY); a2.text(0.02, 0.0, "quantile oracle", transform=a2.get_yaxis_transform(), ha="left", va="bottom", fontsize=6, color=fg.GREY)
+    if refs:
+        a2.axhline(refs["unconditional"], **BASELINE_STYLE)                # climatological change
+        a2.axhline(refs["unconditional_sir"], **dict(BASELINE_STYLE, ls=":"))  # SIR forecast, same blue, dotted
     a2.set_title("Continuous, unconditional", fontsize=8); a2.set_xlabel("Epoch Capabilities Index"); a2.set_ylabel("Excess CRPS / $C$ (lower is better)")
     a2.text(0.98, 0.92, skill_annotation(rho2, lo2, hi2, n2), transform=a2.transAxes, ha="right", fontsize=7.5)
     fig.savefig(out / "fig_starsim_unconditional.pdf", bbox_inches="tight"); fig.savefig(out / "fig_starsim_unconditional.png", dpi=200, bbox_inches="tight"); plt.close(fig)
@@ -142,12 +147,22 @@ def fig_unconditional(long, out, C):
     return {"binary": dict(rho=rho, lo=lo, hi=hi, n=n, n_within_001_bit=n01, min=min(vals), max=max(vals), median=float(np.median(vals))),
             "continuous": dict(rho=rho2, lo=lo2, hi=hi2, n=n2, min=cv[0], max=cv[-1], median=float(np.median(cv)))}
 
-def fig_interventional(long, out):
+def fig_interventional(long, out, refs=None):
+    """refs: independence, the no-vaccine climatological change, drawn as a line the caption names."""
+    def reference(ax, y, fontsize, headroom):
+        """The line at y, or, when y is far above the models, a note at the top of the panel; headroom keeps the top clear."""
+        lo, hi = ax.get_ylim()
+        if y <= 2 * hi:
+            ax.axhline(y, **BASELINE_STYLE); ax.set_ylim(lo, max(hi, y + headroom * (y - lo)))
+        else:
+            ax.set_ylim(lo, hi + 0.2 * (hi - lo))
+            ax.text(0.99, 0.97, f"independence: {y:.2f} (above)", transform=ax.transAxes, ha="right", va="top", fontsize=fontsize, color=BASELINE_STYLE["color"])
     pooled = series(long, "continuous", "interventional", "pooled(c25,c50,c90)")
     fig = plt.figure(figsize=(7.2, 3.1)); gs = fig.add_gridspec(3, 2, width_ratios=[2.6, 1.0], hspace=0.55, wspace=0.28)
     ax = fig.add_subplot(gs[:, 0]); fg.scatter(ax, pooled); rho, lo, hi, n = fg.rho_ci(pooled, seed=0)
     ax.axhline(0, ls="--", lw=0.6, color=fg.GREY); ax.text(0.99, 0.0, "quantile oracle", transform=ax.get_yaxis_transform(), ha="right", va="bottom", fontsize=6, color=fg.GREY)
     ax.set_xlabel("Epoch Capabilities Index"); ax.set_ylabel("Interventional excess CRPS / $C$ (lower is better)"); ax.set_title("All rungs pooled", fontsize=8, loc="left")
+    if refs: reference(ax, refs["interventional"], 7, 0.25)
     inc = [p for p in pooled if not p[3]]
     note = skill_annotation(rho, lo, hi, n) + ("\nopen marker: incomplete, not in $\\rho$" if inc else "")
     ax.text(0.98, 0.97, note, transform=ax.transAxes, ha="right", va="top", fontsize=7)
@@ -156,6 +171,7 @@ def fig_interventional(long, out):
         axs = fig.add_subplot(gs[i, 1]); pts = series(long, "continuous", "interventional", rung); fg.scatter(axs, pts, labels=False)
         r2, l2, h2, n2 = fg.rho_ci(pts, seed=0); stats[rung] = dict(rho=r2, lo=l2, hi=h2, n=n2)
         axs.axhline(0, ls="--", lw=0.6, color=fg.GREY)
+        if refs: reference(axs, refs["interventional_by_rung"][rung], 5.5, 0.06)
         axs.set_title(f"{rung[1:]}% coverage: $\\rho_s$ = {-r2:.2f} [{-h2:.2f}, {-l2:.2f}], $n$ = {n2}", fontsize=6, pad=2)
         if i == 2: axs.set_xlabel("Epoch Capabilities Index", fontsize=7)
         else: axs.set_xticklabels([])

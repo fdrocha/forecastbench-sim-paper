@@ -45,6 +45,19 @@ FT = [90, 120, 150, 180, 210]
 FT_NC = [120, 150, 180, 210]
 
 # ---------------------------------------------------------------- per-model headline table
+# the base rate's binary scores, from make_freeciv_baselines.py: a row below the models, and bold model scores below it
+BASELINES = DATA / "freeciv_baselines.json"
+BASE = json.loads(BASELINES.read_text()) if BASELINES.exists() else None
+def beats(value, key, digits):
+    text = fmt(value, digits)
+    return f"\\textbf{{{text}}}" if BASE and value < BASE[key] else text
+def below(value, base, digits):
+    """A cell, bold when a baseline score is given and the value is below it."""
+    text = fmt(value, digits)
+    return f"\\textbf{{{text}}}" if base is not None and value < base else text
+bh = {int(T): v for T, v in BASE["binary_by_horizon"].items()} if BASE else {}
+ch = {int(T): v for T, v in BASE["continuous_ncrps_by_horizon"].items()} if BASE else {}
+nh = {int(T): v for T, v in BASE["natcond_by_horizon"].items()} if BASE else {}
 rows, f_rec = [], {}
 for m in fc_models:
     vals = [fw.loc[m, c] for c in ["bank_all_excess_brier", "tails_all_excess_bits", "continuous_all_ncrps_global",
@@ -52,19 +65,23 @@ for m in fc_models:
     n_items = sum(fw.loc[m, f"{s}_all_n_items"] for s in ["bank", "tails", "mirrors", "continuous", "natcond"])
     n_valid = sum(fw.loc[m, f"{s}_all_n_valid"] for s in ["bank", "tails", "mirrors", "continuous", "natcond"])
     cost = float(fw.loc[m, "total_cost_usd"])
-    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}", fmt(vals[0], 4), fmt(vals[1], 3), fmt(vals[2], 3), fmt(vals[3], 3),
-                 fmt(vals[4], 4), fmt(vals[5], 4), fmt(n_valid / n_items, 1, pct=True), f"{cost:.2f}"])
+    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}", beats(vals[0], "bank_all_excess_brier", 4), beats(vals[1], "tails_all_excess_bits", 3), fmt(vals[2], 3), beats(vals[3], "continuous_all_excess_ncrps_global", 3),
+                 beats(vals[4], "natcond_all_excess_t2", 4), fmt(vals[5], 4), fmt(n_valid / n_items, 1, pct=True), f"{cost:.2f}"])
     f_rec[m] = dict(eci=float(fw.loc[m, "eci"]), bank_excess_brier=float(vals[0]), tails_excess_bits=float(vals[1]),
                     continuous_ncrps_global=float(vals[2]), continuous_excess_ncrps_global=float(vals[3]),
                     natcond_excess_t2=float(vals[4]), natcond_gain=float(vals[5]), parsed_share=float(n_valid / n_items),
                     n_items_five_sets=int(n_items), total_calls=int(fw.loc[m, "total_calls"]), cost_usd=cost)
+if BASE:
+    rows.append(["\\midrule Baseline", "", fmt(BASE["bank_all_excess_brier"], 4), fmt(BASE["tails_all_excess_bits"], 3), "",
+                 fmt(BASE["continuous_all_excess_ncrps_global"], 3), fmt(BASE["natcond_all_excess_t2"], 4)] + [""] * 3)
 write_tabular(TABLES / "freeciv_models.tex", "lrrrrrrrrr",
               ["Model & ECI & Mid-range & Tails & \\multicolumn{2}{c}{Continuous} & \\multicolumn{2}{c}{Natural conditional} & Parsed & Cost",
                "\\cmidrule(lr){5-6}\\cmidrule(lr){7-8}",
                " & & excess Brier & bits & nCRPS & excess & excess Brier & gain & (\\%) & (\\$)"],
               rows, comment=("FreeCiv per model (provisional, one question per prompt). Source: " if RUN.startswith("run1") else "FreeCiv per model (run 2: batched at up to 50 binary / 20 continuous questions per prompt; natural conditionals one per prompt). Source: ") + " freeciv_results_wide.csv, columns "
                             "bank_all_excess_brier, tails_all_excess_bits, continuous_all_ncrps_global, continuous_all_excess_ncrps_global, "
-                            "natcond_all_excess_t2, natcond_all_gain, *_all_n_valid / *_all_n_items over the five scored sets, total_cost_usd.")
+                            "natcond_all_excess_t2, natcond_all_gain, *_all_n_valid / *_all_n_items over the five scored sets, total_cost_usd; "
+                            "baseline (base rate, climatological change, independence): freeciv_baselines.json; bold: below it.")
 NUMBERS["freeciv"] = {"per_model": f_rec, "n_models": 24, "total_cost_usd": float(fw["total_cost_usd"].sum()),
                       "parsed_share_range": [min(r["parsed_share"] for r in f_rec.values()), max(r["parsed_share"] for r in f_rec.values())],
                       "gain_positive_models": int(sum(r["natcond_gain"] > 0 for r in f_rec.values())),
@@ -91,15 +108,18 @@ for m in fc_models:
     for t, v in zip(FT, byh):
         assert abs(v - fw.loc[m, f"mirrors_{t}_excess_brier"]) < 6e-5, (m, t)
     lo, hi = [float(x) for x in re.findall(r"[-0-9.]+", ci)]
-    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}", fmt(est, 4), f"[{lo:.3f}, {hi:.3f}]"] + [fmt(v, 3) for v in byh])
+    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}", below(est, BASE and BASE["mirrors_all_excess_brier"], 4)]
+                + [below(v, bh.get(t, {}).get("mirror"), 3) for t, v in zip(FT, byh)])
     m_rec[m] = dict(excess_brier=est, ci95=[lo, hi], by_horizon=dict(zip([str(t) for t in FT], byh)))
-write_tabular(TABLES / "freeciv_mirrors.tex", "lrrlrrrrr",
-              ["Model & ECI & Excess Brier & 95\\% CI & \\multicolumn{5}{c}{By horizon (turn)}",
-               "\\cmidrule(lr){5-9}",
-               " & & & & 90 & 120 & 150 & 180 & 210"],
+if BASE:
+    rows.append(["\\midrule Baseline", "", fmt(BASE["mirrors_all_excess_brier"], 4)] + [fmt(bh[t]["mirror"], 3) for t in FT])
+write_tabular(TABLES / "freeciv_mirrors.tex", "lrrrrrrr",
+              ["Model & ECI & Excess Brier & \\multicolumn{5}{c}{By horizon (turn)}",
+               "\\cmidrule(lr){4-8}",
+               " & & & 90 & 120 & 150 & 180 & 210"],
               rows, comment="FreeCiv mirrors set (50 binary questions with 0.95 <= q < 1, 10 per horizon). Source: SCORES.md "
                             "(sections 'Mirrors 50' and 'mirrors: excess_brier by horizon'), cross-checked against freeciv_results_wide.csv "
-                            "and score_items.csv. The 95% CI is the item-level interval printed in SCORES.md (bootstrap over items).")
+                            "and score_items.csv.")
 beat = [m for m in fc_models if m_rec[m]["excess_brier"] < flat05]
 rho_m, p_m, ci_m, nb = spearman_signed([fw.loc[m, "eci"] for m in fc_models], [m_rec[m]["excess_brier"] for m in fc_models])
 NUMBERS["freeciv"]["mirrors"] = {
@@ -133,10 +153,14 @@ for m in fc_models:
         assert fw.loc[m, f"bank_{t}_n_items"] == 150 and fw.loc[m, f"tails_{t}_n_items"] == 60 and fw.loc[m, f"continuous_{t}_n_items"] == 60
     for t in FT_NC:
         assert fw.loc[m, f"natcond_{t}_n_items"] == 100
-    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}"] + [fmt(v, 4) for v in b] + [fmt(v, 3) for v in t_])
-    rows2.append([name(m), f"{fw.loc[m, 'eci']:.1f}"] + [fmt(v, 3) for v in c] + [fmt(v, 4) for v in n])
+    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}"] + [below(v, bh.get(t, {}).get("mid"), 4) for t, v in zip(FT, b)]
+                + [below(v, bh.get(t, {}).get("tail"), 3) for t, v in zip(FT, t_)])
+    rows2.append([name(m), f"{fw.loc[m, 'eci']:.1f}"] + [below(v, ch.get(t), 3) for t, v in zip(FT, c)] + [below(v, nh.get(t), 4) for t, v in zip(FT_NC, n)])
     hb_rec[m] = dict(bank=dict(zip(map(str, FT), b)), tails=dict(zip(map(str, FT), t_)),
                      continuous=dict(zip(map(str, FT), c)), natcond=dict(zip(map(str, FT_NC), n)))
+if BASE:
+    rows.append(["\\midrule Baseline", ""] + [fmt(bh[t]["mid"], 4) for t in FT] + [fmt(bh[t]["tail"], 3) for t in FT])
+    rows2.append(["\\midrule Baseline", ""] + [fmt(ch[t], 3) for t in FT] + [fmt(nh[t], 4) for t in FT_NC])
 write_tabular(TABLES / "freeciv_horizon_binary.tex", "lrrrrrrrrrrr",
               ["Model & ECI & \\multicolumn{5}{c}{Mid-range excess Brier, by horizon (turn)} & \\multicolumn{5}{c}{Tail excess bits, by horizon (turn)}",
                "\\cmidrule(lr){3-7}\\cmidrule(lr){8-12}",
@@ -170,8 +194,11 @@ for m in fc_models:
         assert abs(ex_i - parts[0]) < 6e-4 and abs(ga_i - parts[2]) < 6e-4, (m, b, parts, ex_i, ga_i)
         ex.append(ex_i)
         ga.append(ga_i)
-    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}"] + [fmt(v, 3) for v in ex] + [fmt(v, 3) for v in ga])
+    rows.append([name(m), f"{fw.loc[m, 'eci']:.1f}"] + [below(v, BASE and BASE["natcond_by_block"][k], 3) for k, v in zip(BLOCKS, ex)]
+                + [fmt(v, 3) for v in ga])
     blk_rec[m] = dict(excess_t2=dict(zip(BLOCKS, ex)), gain=dict(zip(BLOCKS, ga)))
+if BASE:   # independence: the base rate of Y, which never updates, so its gain is zero
+    rows.append(["\\midrule Baseline", ""] + [fmt(BASE["natcond_by_block"][k], 3) for k in BLOCKS] + [""] * len(BLOCKS))
 write_tabular(TABLES / "freeciv_natcond_blocks.tex", "lrrrrrrrrrrr",
               ["Model & ECI & \\multicolumn{5}{c}{Turn-2 excess Brier, by block} & \\multicolumn{5}{c}{Gain over not updating, by block}",
                "\\cmidrule(lr){3-7}\\cmidrule(lr){8-12}",

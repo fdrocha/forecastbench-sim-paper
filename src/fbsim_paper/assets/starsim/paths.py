@@ -4,11 +4,13 @@ import sys
 from pathlib import Path
 
 
-def analysis_modules():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--analysis-root', type=Path, default=Path.cwd())
-    args, _ = parser.parse_known_args()
-    root = args.analysis_root.resolve()
+def analysis_modules(root=None):
+    """The analysis checkout's root and modules; without `root`, from --analysis-root on the command line."""
+    if root is None:
+        parser = argparse.ArgumentParser(add_help=False)
+        parser.add_argument('--analysis-root', type=Path, default=Path.cwd())
+        root = parser.parse_known_args()[0].analysis_root
+    root = Path(root).resolve()
     table = root / 'results' / 'table'
     if not (table / 'build_table.py').is_file():
         raise SystemExit('Run from the iclr-2026 root or pass --analysis-root PATH.')

@@ -8,6 +8,8 @@ import numpy as np
 # 5.5in is the paper's \textwidth, so the figure sets at its natural size.
 SIZE = (5.5, 2.04)
 POINT_COLOR = "#102b23"
+# How baselines (the base rate, the climatological change) are drawn in every figure.
+BASELINE_STYLE = dict(color="#1c5ac0", ls="-.", lw=1.0)
 
 # Text set by LaTeX (pgf), so it is the paper's own Computer Modern.
 RC = {
@@ -58,8 +60,11 @@ def rho_note(rho, band=None):
     return note
 
 
-def draw_panel(ax, x, y, note, ylabel, title):
-    """One panel: the models' points, a least-squares line and the rho note."""
+def draw_panel(ax, x, y, note, ylabel, title, reference=None):
+    """One panel: the models' points, a least-squares line and the rho note.
+
+    `reference`, a baseline's score, is drawn as a horizontal line in BASELINE_STYLE; the caption names it.
+    """
     x, y = np.asarray(x, float), np.asarray(y, float)
     ax.scatter(x, y, s=7, color=POINT_COLOR, linewidths=0, zorder=3, clip_on=False)
 
@@ -68,8 +73,13 @@ def draw_panel(ax, x, y, note, ylabel, title):
         xs = np.array([x.min(), x.max()])
         ax.plot(xs, slope * xs + intercept, color="0.72", lw=0.6, zorder=1)
 
+    if reference is not None:
+        ax.axhline(reference, zorder=2, **BASELINE_STYLE)
+
     # headroom for the rho note, top left
     lo, hi = y.min(), y.max()
+    if reference is not None:
+        lo, hi = min(lo, reference), max(hi, reference)
     ax.set_ylim(lo - 0.13 * (hi - lo), hi + 0.26 * (hi - lo))
 
     ax.text(0.03, 0.955, note, transform=ax.transAxes, fontsize=6, color=POINT_COLOR, va="top", ha="left")

@@ -71,6 +71,8 @@ def main():
  for name in ['validate','reproduce','reproduce-freeciv','reproduce-micropolis']:
   q=s.add_parser(name);q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
   if name.startswith('reproduce'):q.add_argument('--output',type=Path,required=True)
+ q=s.add_parser('check-archive',help='Check that v1 files are unchanged and list files added since v1')
+ q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
  q=s.add_parser('build',help='Regenerate the manuscript checkout\'s generated files in place')
  q.add_argument('steps',nargs='*',help='Any of micropolis, freeciv, starsim, combined (default: all, in that order)')
  q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
@@ -82,6 +84,11 @@ def main():
  else:
   if a.data_root is None:p.error('Pass --data-root DIR or set FBSIM_DATA_ROOT (in the shell or .env); no default private path is assumed.')
   a.data_root=Path(a.data_root).expanduser()
+  if a.command=='check-archive':
+   from .archive import check
+   result=check(a.data_root.resolve().parent);print(json.dumps(result,indent=2))
+   if result['missing'] or result['changed']:sys.exit(f"{len(result['missing'])} v1 files missing, {len(result['changed'])} changed")
+   return
   if a.command=='build':
    if a.paper_root is None:p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')
    from .build import run

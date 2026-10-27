@@ -49,8 +49,9 @@ def audit_rho(pts,*a,**kw):
    return -float(s['new_skill_rho']),-float(s['new_panel_hi']),-float(s['new_panel_lo']),len(full)
  return saved_rho(pts,*a,**kw)
 be.fg.rho_ci=audit_rho
-be.fig_unconditional(long,O,C);be.fig_interventional(long,O);be.per_item_table(pi,O,C)
-sys.argv=['extra','--analysis-root',str(A),'--out',str(O)];runpy.run_path(str(HERE/'build_excess_extra.py'),run_name='__main__')
+base=P/'data/starsim/starsim_baselines.json'; refs=json.loads(base.read_text()) if base.exists() else None
+be.fig_unconditional(long,O,C,refs);be.fig_interventional(long,O,refs);be.per_item_table(pi,O,C)
+sys.argv=['extra','--analysis-root',str(A),'--out',str(O)]+(['--baselines',str(base)] if base.exists() else []);runpy.run_path(str(HERE/'build_excess_extra.py'),run_name='__main__')
 for n,dest in {'starsim_excess_long.csv':'data/starsim/starsim_excess_long.csv','per_item_table.tex':'data/starsim/per_item_table.tex','per_item_table.json':'data/starsim/per_item_table.json',**{n+'.tex':'data/appendix_tables/'+n+'.tex' for n in ['starsim_models','starsim_horizon','starsim_rung_horizon']},**{n+'.'+ext:'figures/'+n+'.'+ext for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon'] for ext in ['pdf','png']}}.items():shutil.copy2(O/n,P/dest)
 extra=json.loads((O/'numbers_extra.json').read_text());dump(P/'data/starsim/integration_numbers.json',{'starsim':extra,'inputs':manifest})
 # Read-only source assertions and binary preservation.
