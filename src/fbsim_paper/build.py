@@ -13,6 +13,7 @@ FREECIV_RUN = 'run2_paper'
 FREECIV_CANDIDATES = 'datasets/freeciv-candidates'
 FREECIV_FRACTIONS = 'datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1/sets/draw_v1/selection_fractions_bank_tails_mirrors.json'
 MICROPOLIS_NATCOND = 'datasets/micropolis-natcond'
+MICROPOLIS_INTCOND = 'datasets/micropolis-intcond'
 
 def stage(inputs, paper):
     """Copy each file of paper-inputs to the same path under the manuscript's data/, if its content differs."""
@@ -36,10 +37,11 @@ def _commands(step, data, paper, tmp):
     if step == 'micropolis':
         # The baselines first, beside the inputs: analyze_paper.py draws them and delivers the JSON with the data.
         env, cmds = commands(step, data, paper, tmp, data/INPUTS/'micropolis')
-        natcond = [py, str(ASSETS/'micropolis/scripts/micropolis_natcond.py'), '--natcond', str(data/MICROPOLIS_NATCOND),
-                   '--datadir', str(tmp/'inputs'), '--model-names', str(data/INPUTS/'model_names.csv'), '--paper-root', str(paper)]
+        common = ['--datadir', str(tmp/'inputs'), '--model-names', str(data/INPUTS/'model_names.csv'), '--paper-root', str(paper)]
+        natcond = [py, str(ASSETS/'micropolis/scripts/micropolis_natcond.py'), '--natcond', str(data/MICROPOLIS_NATCOND)] + common
+        intcond = [py, str(ASSETS/'micropolis/scripts/micropolis_intcond.py'), '--intcond', str(data/MICROPOLIS_INTCOND)] + common
         return env, [[py, str(ASSETS/'micropolis/scripts/micropolis_baselines.py'), '--datadir', str(tmp/'inputs'),
-                      '--out', str(tmp/'inputs'/'micropolis_baselines.json')]] + cmds + [natcond]
+                      '--out', str(tmp/'inputs'/'micropolis_baselines.json')]] + cmds + [natcond, intcond]
     if step == 'freeciv':
         src = data/FREECIV; results = src/'results'; A = ASSETS/'freeciv'
         env = _env(tmp); env.update(FBSIM_SOURCE_ROOT=str(src), FBSIM_RUN=FREECIV_RUN, FBSIM_PAPER_ROOT=str(paper))

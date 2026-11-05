@@ -10,6 +10,7 @@ class Answers(unittest.TestCase):
         rows = [dict(model="m", arm="t1", item="i", value=None), dict(model="m", arm="t1", item="i", value=0.3),
                 dict(model="m", arm="t1", item="i", value=0.9)]
         self.assertEqual(answers(rows), {("m", "t1", "i"): 0.3})
+        self.assertEqual(answers(rows, last=True), {("m", "t1", "i"): 0.9})
 
 
 class Score(unittest.TestCase):
