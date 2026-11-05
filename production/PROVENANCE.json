@@ -775,6 +775,21 @@
    "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/tests/test_resolver_registry.py",
    "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/tests/test_resolver_registry.py",
    "sha256": "112264b047a72e60d9a5f0b078f2413f583d82239f6e8f3a23f4a4ab2b7d7a9a"
+  },
+  {
+   "path": "micropolis/natcond/models-22.json5",
+   "source": "github.com/fdrocha/forecastbench-sim@e892da8c:worlds/micropolis/configs/models-22.json5",
+   "sha256": "1a1494f9c81b03de2e7195be82d8c30870660b06b2a4434aa5ea1c6e1421368e"
+  },
+  {
+   "path": "micropolis/natcond/models-21-no-llama.json5",
+   "source": "local run folder fbsim-local/data/micropolis/natcond (not in Git; November 3, 2026): models-21-no-llama.json5",
+   "sha256": "38497f4f07f3f906ec71f639ee87b2935d6e4ec17d6a31ae4ecfaedb78fc99a8"
+  },
+  {
+   "path": "micropolis/natcond/model_specs_llama_priority.json5",
+   "source": "local run folder fbsim-local/data/micropolis/natcond (not in Git; November 3, 2026): natcond_400_seed42_elicit_llama/model_specs_llama_priority.json5",
+   "sha256": "84e74b4965473e457bf5b0940e2dd4bc2dc8e2e16776c18fd5959a0649c13779"
   }
  ]
 }
