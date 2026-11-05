@@ -13,12 +13,13 @@ import numpy as np
 from fbsim_paper.baselines import base_rates
 
 
-def answers(rows):
-    """Each (model, arm, item)'s answer: the value of its first row with a parsed value."""
+def answers(rows, last=False):
+    """Each (model, arm, item)'s answer: the value of its first row with a parsed value, or its last with `last`
+    (for results where a later row supersedes an earlier one)."""
     out = {}
     for r in rows:
         k = (r["model"], r["arm"], r["item"])
-        if r["value"] is not None and k not in out:
+        if r["value"] is not None and (last or k not in out):
             out[k] = float(r["value"])
     return out
 
