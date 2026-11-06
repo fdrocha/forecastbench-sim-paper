@@ -1,4 +1,4 @@
-"""Refit the nine-cell combined score from all three worlds and write its outputs into the paper checkout:
+"""Refit the combined score (nine cells, eleven with the Micropolis conditionals) from all three worlds and write its outputs into the paper checkout:
 combined_score.json/_table/_macros, the matched external panel, Starsim's fixed-state uncertainty table, the figure,
 the rank tables and the Appendix C sensitivities (combined_sensitivity.json/_macros.tex). Propagates Starsim's replay
 bootstrap (data/starsim/fixed_state/) through the fit, keeps the 10,000-model bootstrap; its intervals go in
@@ -16,13 +16,14 @@ read=lambda p:list(csv.DictReader(open(p)))
 def dump(p,x):p.write_text(json.dumps(x,indent=2,default=lambda v:v.item() if hasattr(v,'item') else str(v))+'\n')
 cache=P/'data/starsim/fixed_state'
 lookup={(r['group'],r['against']):r for r in read(cache/'associations.csv') if r['horizon']=='pooled'}
-# Refit CURRENT combined definition: nine cells, full-precision excess nCRPS for FreeCiv.
+# Refit CURRENT combined definition: nine cells, eleven with the Micropolis conditionals; full-precision excess nCRPS for FreeCiv.
 sys.path.insert(0,str(HERE));sys.argv=['combined','--paper-root',str(P),'--out',str(O/'combined_score.json')]
 g=runpy.run_path(str(HERE/'combined_score.py'),run_name='integration_import')
 S=g['starsim']('excess'); cells={}
 for src in [g['MICRO'],S,g['FREE']]:
  for k in next(iter(src.values())):cells[k]={m:src[m][k] for m in g['MODELS']}
-result=g['analyse'](cells,'current nine-cell rescore',False);g['write_outputs'](result,O)
+WORDS=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen']
+result=g['analyse'](cells,f'current {WORDS[len(cells)]}-cell rescore',False);g['write_outputs'](result,O)
 labels=list(cells); models=g['MODELS'];L=np.array([[cells[c][m] if cells[c][m] is not None else np.nan for c in labels] for m in models]); mask=np.isfinite(L);coords=np.argwhere(mask)
 D=np.zeros((len(coords),L.shape[1]+len(models)))
 for row,(mi,col) in enumerate(coords):D[row,col]=1;D[row,L.shape[1]+mi]=-1
@@ -64,14 +65,14 @@ lines=[r'\begin{tabular}{lrr}',r'\toprule',r'Comparator / contrast & $\rho$ or d
 for label,point,interval in [('ECI',matched['eci_rho'],matched['eci_interval']),('ForecastBench',matched['fb_rho'],matched['fb_interval']),('ECI minus ForecastBench',matched['eci_rho']-matched['fb_rho'],matched['difference_interval'])]:
  lines.append(f'{label} & ${point:.3f}$ & $[{interval[0]:.3f},{interval[1]:.3f}]$ '+r'\\')
 lines += [r'\bottomrule',r'\end{tabular}'];(P/'data/combined_matched_panel.tex').write_text('\n'.join(lines)+'\n')
-result.update(starsim='fixed-state continuous; binary excluded',uncertainty=combined_unc,method='current nine-cell definition; other simulations fixed; panel bootstrap does not refit theta; replay bootstrap refits fixed panel')
+result.update(starsim='fixed-state continuous; binary excluded',uncertainty=combined_unc,method=f'current {WORDS[len(labels)]}-cell definition; other simulations fixed; panel bootstrap does not refit theta; replay bootstrap refits fixed panel')
 dump(O/'combined_score.json',result)
 for n in ['combined_score.json','combined_score_table.tex','combined_score_macros.tex']:shutil.copy2(O/n,P/'data'/n)
 sys.argv=['plot','--paper-root',str(P),'--combined',str(P/'data/combined_score.json'),'--out-dir',str(P/'figures')];runpy.run_path(str(HERE/'plot_combined_score.py'),run_name='__main__')
 sys.argv=['rank','--paper-root',str(P)];runpy.run_path(str(HERE/'make_rank_table.py'),run_name='__main__')
 # Compact appendix table: separate uncertainty sources, no joint interval or effect-skill claim.
 lines=[r'\begin{tabular}{llrrrr}',r'\toprule',r'Score & Comparator & $n$ & $\rho$ & Models, 95\% & Replays, 95\% \\',r'\midrule']
-for group,label in [('cont_uncond','Continuous baseline'),('interventional_pooled','Interventional outcomes'),('combined_current','Combined nine cells')]:
+for group,label in [('cont_uncond','Continuous baseline'),('interventional_pooled','Interventional outcomes'),('combined_current',f'Combined {WORDS[len(labels)]} cells')]:
  for against,pretty in [('eci','ECI'),('fb_overall','ForecastBench')]:
   if group=='combined_current':s=combined_unc[against];rho=s['rho'];n=s['n'];lo,hi=s['model_interval'];rl,rh=s['replay_interval']
   else:s=lookup[group,against];rho=float(s['new_skill_rho']);n=s['n'];lo,hi=float(s['new_panel_lo']),float(s['new_panel_hi']);rl,rh=float(s['new_replay_lo']),float(s['new_replay_hi'])
@@ -101,13 +102,12 @@ r0=rank(theta);loo_move=max(int(np.abs(rank(fit(np.delete(L,i,1))[0])-r0).max())
 sds=np.nanstd(np.log(np.maximum(L,1e-4)),axis=0);sim=np.array([c.split()[0] for c in labels]);tw=sim_weighted_fit(L,np.array([1/(sim==x).sum() for x in sim]))
 sens=dict(rho=result['rho'],complete_cells=dict(n=len(complete),rho=srho(eci[complete],fit(L[complete])[0])),
           all_starsim_repetitions=dict(n=len(reps),dropped=['Kimi K2','DeepSeek V4 Flash'],rho=srho(eci[reps],fit(L[reps])[0])),
-          ten_cell_historical_binary=dict(n=len(models),rho=srho(eci,fit(cells_with_binary())[0])),matched_eci_rho=matched['eci_rho'],loo_max_rank_move=loo_move,
+          historical_binary=dict(n=len(models),rho=srho(eci,fit(cells_with_binary())[0])),matched_eci_rho=matched['eci_rho'],loo_max_rank_move=loo_move,
           cell_log_sd=dict(zip(labels,map(float,sds))),equal_simulation_weight=dict(rho=srho(eci,tw),rank_agreement=srho(theta,tw),max_rank_move=int(np.abs(rank(tw)-r0).max())),
           freeciv_midrange_tail_rank_corr=srho(L[:,labels.index('FreeCiv bank excess Brier')],L[:,labels.index('FreeCiv tail excess bits')]))
 dump(P/'data/combined_sensitivity.json',sens)
-WORDS=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve']
-macros={'CombinedRhoThree':f"{sens['rho']:.3f}",'CombinedCompleteRho':f"{sens['complete_cells']['rho']:.3f}",'CombinedRepsRho':f"{sens['all_starsim_repetitions']['rho']:.3f}",
-        'CombinedBinaryRho':f"{sens['ten_cell_historical_binary']['rho']:.3f}",'CombinedMatchedEciRho':f"{sens['matched_eci_rho']:.3f}",'CombinedLooMaxMove':WORDS[loo_move],
+macros={'CombinedRhoThree':f"{sens['rho']:.3f}",'CombinedNCells':WORDS[len(labels)],'CombinedNMissing':WORDS[int((~mask).sum())],'CombinedCompleteN':str(sens['complete_cells']['n']),'CombinedBinaryCells':WORDS[len(labels)+1],'CombinedCompleteRho':f"{sens['complete_cells']['rho']:.3f}",'CombinedRepsRho':f"{sens['all_starsim_repetitions']['rho']:.3f}",
+        'CombinedBinaryRho':f"{sens['historical_binary']['rho']:.3f}",'CombinedMatchedEciRho':f"{sens['matched_eci_rho']:.3f}",'CombinedLooMaxMove':WORDS[loo_move],
         'CombinedCellSdLo':f'{sds.min():.3f}','CombinedCellSdHi':f'{sds.max():.3f}','CombinedEqualSimRho':f"{sens['equal_simulation_weight']['rho']:.3f}",
         'CombinedEqualSimAgreement':f"{sens['equal_simulation_weight']['rank_agreement']:.3f}",'CombinedEqualSimMaxMove':WORDS[sens['equal_simulation_weight']['max_rank_move']],
         'FreeCivMidTailRankCorr':f"{sens['freeciv_midrange_tail_rank_corr']:.3f}".replace('-',r'\ensuremath{-}')}

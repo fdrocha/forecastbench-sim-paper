@@ -24,8 +24,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from micropolis_natcond import (baselines, capability, cell_update, core_macros, load, num, parse_args, per_model,
-                                read_jsonl, report, summarize, write_figure, write_macros, write_tables)
+from micropolis_natcond import (baselines, capability, cell_update, core_macros, forecastbench, load, num, parse_args,
+                                per_model, read_jsonl, report, summarize, write_figure, write_macros, write_tables)
 
 BLOCKS = ["null", "same-family", "damage", "infrastructure"]
 NAMES = dict(zip(BLOCKS, ["Null", "Same", "Damage", "Infra"]))  # macro suffixes
@@ -54,6 +54,7 @@ def main():
     upd = cell_update(scored, cells)
     summary = summarize(cells, models, scored, per, y, rho, rho_p, rho_ci, base, upd,
                         after_blocks=dict(actions=dict(Counter(c["action"] for c in cells))))
+    summary["forecastbench"] = forecastbench(models, per, args.datadir)
     paper = args.paper_root
     write_tables(paper, "intcond", cells, models, per, short, summary, BLOCKS, ["Null", "Same", "Dam.", "Infra."],
                  keys, extra_cols=[("same_family_high", "same_high")])
