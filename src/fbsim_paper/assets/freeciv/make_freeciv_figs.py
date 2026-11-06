@@ -395,7 +395,7 @@ ax.errorbar(bm.target, bm.move, yerr=1.96 * bm.se, color=ORANGE, lw=1.3, marker=
             label="cell means by true-shift bin ($\\pm$1.96 s.e.)")
 ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
 ax.set_xticks([-0.6, -0.3, 0, 0.3, 0.6]); ax.set_yticks([-0.6, -0.3, 0, 0.3, 0.6])
-ax.set_xlabel("True shift $p(Y\\,|\\,X) - p(Y)$")
+ax.set_xlabel("True shift $P(A\\,|\\,B) - P(A)$")
 ax.set_ylabel("Model move $p_2 - p_1$ after the reveal")
 ax.set_aspect("equal")
 leg = ax.legend(loc="lower right", fontsize=5.8, handlelength=1.8, frameon=True, framealpha=0.9, edgecolor="none",
