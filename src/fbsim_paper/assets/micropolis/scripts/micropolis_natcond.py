@@ -9,8 +9,8 @@ here are shared with micropolis_intcond.py.
 
 Writes into the manuscript checkout:
 
-- figures/fig_micropolis_natcond.pdf: (a) turn-2 excess Brier against ECI, with independence; (b) model move
-  p2 - p1 against the true shift P(A|B) - P(A), as FreeCiv's fig_freeciv_natcond_update.pdf;
+- figures/fig_micropolis_natcond.pdf: model move p2 - p1 against the true shift P(A|B) - P(A), as FreeCiv's
+  fig_freeciv_natcond_update.pdf (the turn-2 excess Brier against ECI is a panel of fig_micropolis_capability.pdf);
 - data/appendix_tables/micropolis_natcond_blocks.tex: per model, turn-2 excess Brier and gain by block;
 - data/micropolis_natcond_macros.tex: \\MPNC* macros for the prose;
 - data/micropolis/micropolis_natcond_scores.csv and micropolis_natcond_summary.json: the numbers behind them.
@@ -233,31 +233,31 @@ def write_macros(paper, study, prefix, cells, summary, macros):
     (paper / f"data/micropolis_{study}_macros.tex").write_text("\n".join(text) + "\n")
 
 
-def write_figure(paper, study, x, y, rho, rho_ci, base, scored, upd, title_a, shift_label):
-    """(a) turn-2 excess Brier against ECI, with independence; (b) model move against the true shift."""
+def write_figure(paper, study, scored, upd, shift_label):
+    """Model move p2 - p1 against the true shift, per cell and per model-cell pair (the ECI scatter is in Figure 2)."""
+    import matplotlib.pyplot as plt
+
     ct, cm = upd["ct"], upd["cm"]
     with cp.style():
-        fig, (ax1, ax2) = cp.figure(2)
-        cp.draw_panel(ax1, x, y, cp.rho_note(rho, rho_ci), "Turn-2 excess Brier\n(lower is better)",
-                      title_a, reference=base["independence"])
+        fig, ax = plt.subplots(figsize=(2.9, 2.5), layout="constrained")
         lim = max(0.3, float(np.ceil(10 * max(np.abs(ct).max(), np.abs(cm).max())) / 10))
-        ax2.axhline(0, color="0.85", lw=0.5, zorder=1)
-        ax2.axvline(0, color="0.85", lw=0.5, zorder=1)
-        ax2.plot([-lim, lim], [-lim, lim], color="0.5", ls="--", lw=0.7, zorder=2)
+        ax.axhline(0, color="0.85", lw=0.5, zorder=1)
+        ax.axvline(0, color="0.85", lw=0.5, zorder=1)
+        ax.plot([-lim, lim], [-lim, lim], color="0.5", ls="--", lw=0.7, zorder=2)
         # rasterized: thousands of vector markers exhaust TeX's memory under the pgf backend
-        ax2.scatter([s["target"] for s in scored], [s["move"] for s in scored], s=1.5, color="0.8", linewidths=0,
-                    zorder=2, rasterized=True)
-        ax2.scatter(ct, cm, s=5, color=cp.POINT_COLOR, linewidths=0, zorder=3)
-        ax2.set_xlim(-lim, lim)
-        ax2.set_ylim(-lim, lim)
-        ax2.set_xlabel(f"True shift ${shift_label} - P(A)$")
-        ax2.set_ylabel("Move $p_2 - p_1$")
-        ax2.set_title("(b) Update against the true shift", loc="left", fontsize=7)
-        ax2.text(0.03, 0.955, f"cells: $r = {upd['r']:.2f}$, slope ${upd['slope']:.2f}$", transform=ax2.transAxes,
-                 fontsize=6, color=cp.POINT_COLOR, va="top", ha="left")
-        ax2.spines[["top", "right"]].set_visible(False)
+        ax.scatter([s["target"] for s in scored], [s["move"] for s in scored], s=1.5, color="0.8", linewidths=0,
+                   zorder=2, rasterized=True)
+        ax.scatter(ct, cm, s=5, color=cp.POINT_COLOR, linewidths=0, zorder=3)
+        ax.set_xlim(-lim, lim)
+        ax.set_ylim(-lim, lim)
+        ax.set_xlabel(f"True shift ${shift_label} - P(A)$")
+        ax.set_ylabel("Move $p_2 - p_1$")
+        ax.text(0.03, 0.955, f"cells: $r = {upd['r']:.2f}$, slope ${upd['slope']:.2f}$", transform=ax.transAxes,
+                fontsize=6, color=cp.POINT_COLOR, va="top", ha="left")
+        ax.spines[["top", "right"]].set_visible(False)
         (paper / "figures").mkdir(exist_ok=True)
         cp.save(fig, paper / f"figures/fig_micropolis_{study}.pdf")
+        plt.close(fig)
 
 
 def report(study, models, scored, summary, rho_ci):
@@ -310,8 +310,7 @@ def main():
         macros[f"BelowIndep{name}"] = str(sum(e < ind for e in excess))
     write_macros(paper, "natcond", "MPNC", cells, summary, macros)
 
-    write_figure(paper, "natcond", x, y, rho, rho_ci, base, scored, upd, "(a) Excess Brier after the reveal",
-                 "P(A \\mid B)")
+    write_figure(paper, "natcond", scored, upd, "P(A \\mid B)")
     report("natcond", models, scored, summary, rho_ci)
 
 

@@ -35,13 +35,14 @@ def _commands(step, data, paper, tmp):
     """(env, commands) for a step; a command is an argv list or a callable."""
     py = sys.executable
     if step == 'micropolis':
-        # The baselines first, beside the inputs: analyze_paper.py draws them and delivers the JSON with the data.
+        # The baselines and the conditionals first: analyze_paper.py draws them in the capability figure (the
+        # baselines' JSON beside the inputs, which it delivers with the data; the conditionals' summaries in the paper).
         env, cmds = commands(step, data, paper, tmp, data/INPUTS/'micropolis')
         common = ['--datadir', str(tmp/'inputs'), '--model-names', str(data/INPUTS/'model_names.csv'), '--paper-root', str(paper)]
         natcond = [py, str(ASSETS/'micropolis/scripts/micropolis_natcond.py'), '--natcond', str(data/MICROPOLIS_NATCOND)] + common
         intcond = [py, str(ASSETS/'micropolis/scripts/micropolis_intcond.py'), '--intcond', str(data/MICROPOLIS_INTCOND)] + common
         return env, [[py, str(ASSETS/'micropolis/scripts/micropolis_baselines.py'), '--datadir', str(tmp/'inputs'),
-                      '--out', str(tmp/'inputs'/'micropolis_baselines.json')]] + cmds + [natcond, intcond]
+                      '--out', str(tmp/'inputs'/'micropolis_baselines.json')], natcond, intcond] + cmds
     if step == 'freeciv':
         src = data/FREECIV; results = src/'results'; A = ASSETS/'freeciv'
         env = _env(tmp); env.update(FBSIM_SOURCE_ROOT=str(src), FBSIM_RUN=FREECIV_RUN, FBSIM_PAPER_ROOT=str(paper))
