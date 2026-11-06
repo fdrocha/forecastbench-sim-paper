@@ -8,8 +8,7 @@ key's last parsed row (a later row supersedes an earlier one there; see its READ
 
 Writes into the manuscript checkout:
 
-- figures/fig_micropolis_intcond.pdf: (a) turn-2 excess Brier against ECI, with independence; (b) model move
-  p2 - p1 against the true shift P(A | do X) - P(A);
+- figures/fig_micropolis_intcond.pdf: model move p2 - p1 against the true shift P(A | do X) - P(A);
 - data/appendix_tables/micropolis_intcond_blocks.tex: per model, turn-2 excess Brier and gain by block;
 - data/micropolis_intcond_macros.tex: \\MPIC* macros for the prose;
 - data/micropolis/micropolis_intcond_scores.csv and micropolis_intcond_summary.json: the numbers behind them.
@@ -83,8 +82,7 @@ def main():
         macros[f"Move{name}"] = num(float(np.mean([per[m]["by_block"][b]["move"] for m in models])))  # signed
     write_macros(paper, "intcond", "MPIC", cells, summary, macros)
 
-    write_figure(paper, "intcond", x, y, rho, rho_ci, base, scored, upd, "(a) Excess Brier under the intervention",
-                 "P(A \\mid \\mathrm{do}\\,X)")
+    write_figure(paper, "intcond", scored, upd, "P(A \\mid \\mathrm{do}\\,X)")
     report("intcond", models, scored, summary, rho_ci)
 
 

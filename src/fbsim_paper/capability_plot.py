@@ -47,6 +47,21 @@ def figure(n_panels):
     return fig, axes
 
 
+def figure_rows(counts):
+    """Rows of panels, `counts` per row, each panel as wide as in the widest row and each row centered."""
+    import matplotlib.pyplot as plt
+
+    width = max(counts)
+    fig = plt.figure(figsize=(SIZE[0], SIZE[1] * len(counts)), layout="constrained")
+    fig.get_layout_engine().set(w_pad=0.04, h_pad=0.02, wspace=0.02, hspace=0.04)
+    grid = fig.add_gridspec(len(counts), 2 * width)
+    axes = []
+    for r, n in enumerate(counts):
+        start = width - n
+        axes += [fig.add_subplot(grid[r, start + 2 * i:start + 2 * i + 2]) for i in range(n)]
+    return fig, axes
+
+
 def save(fig, path):
     """Save through pgf. No bbox_inches="tight", which would grow the figure past SIZE."""
     fig.savefig(path, backend="pgf")
