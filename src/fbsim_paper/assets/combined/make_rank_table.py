@@ -6,6 +6,7 @@ between every pair of cells, to rank_correlation_table.tex. Standard library onl
 """
 import argparse, csv, json
 from pathlib import Path
+from shading import shade
 
 ap = argparse.ArgumentParser(description=__doc__)
 ap.add_argument("--paper-root", type=Path, required=True)
@@ -79,16 +80,6 @@ def bold(s):
     return f"\\textbf{{{s}}}"
 def fmt_theta(x):
     return f"{{\\boldmath${x:+.2f}$}}"
-# Cell background runs through the seven-class PRGn scale, dark green (best) through white to dark purple (worst);
-# text turns white on the darkest cells.
-GRADIENT = [(27, 120, 55), (90, 174, 97), (166, 219, 160), (247, 247, 247), (194, 165, 207), (153, 112, 171), (118, 42, 131)]
-def shade(s, t):
-    """Shade the cell of s by t in [0, 1], 0 = best."""
-    n = len(GRADIENT) - 1; seg = min(int(t * n), n - 1); u = t * n - seg
-    rgb = [round(a + (b - a) * u) for a, b in zip(GRADIENT[seg], GRADIENT[seg + 1])]
-    luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
-    text = f"\\color{{white}}{s}" if luminance < 120 else s
-    return f"\\cellcolor[RGB]{{{','.join(map(str, rgb))}}}{text}"
 def rank_shade(s, x, col):
     present = [v for v in col.values() if v is not None]
     return s if x is None else shade(s, (x - min(present)) / (max(present) - min(present)))

@@ -58,10 +58,13 @@ fb=np.array([fbmap[m] if fbmap[m] is not None else np.nan for m in models]);ix=n
 rr=np.random.default_rng(2026);ii=rr.integers(0,len(ix),(10000,len(ix)))
 ex=eci[ix];fx=fb[ix];ty=theta[ix]
 er=np.array([spearmanr(ex[j],ty[j]).statistic for j in ii]);fr=np.array([spearmanr(fx[j],ty[j]).statistic for j in ii])
-matched={'n':len(ix),'eci_rho':float(spearmanr(ex,ty).statistic),'eci_interval':ci(er),'fb_rho':float(spearmanr(fx,ty).statistic),'fb_interval':ci(fr),'difference_interval':ci(er-fr)}
+from partial_correlations import partial_with_ci  # rho(FB, theta | ECI) on the same model resamples
+pc=partial_with_ci(fx,ty,ex,ii)
+matched={'n':len(ix),'eci_rho':float(spearmanr(ex,ty).statistic),'eci_interval':ci(er),'fb_rho':float(spearmanr(fx,ty).statistic),'fb_interval':ci(fr),'difference_interval':ci(er-fr),
+         'fb_given_eci_rho':pc['rho'],'fb_given_eci_interval':[pc['ci_lo'],pc['ci_hi']],'fb_given_eci_p':pc['p']}
 dump(P/'data/combined_matched_panel.json',matched)
-lines=[r'\begin{tabular}{lrr}',r'\toprule',r'Comparator / contrast & $\rho$ or difference & Models, 95\% \\',r'\midrule']
-for label,point,interval in [('ECI',matched['eci_rho'],matched['eci_interval']),('ForecastBench',matched['fb_rho'],matched['fb_interval']),('ECI minus ForecastBench',matched['eci_rho']-matched['fb_rho'],matched['difference_interval'])]:
+lines=[r'\begin{tabular}{lrr}',r'\toprule',r'Comparator & $\rho$ & Models, 95\% \\',r'\midrule']
+for label,point,interval in [('ECI',matched['eci_rho'],matched['eci_interval']),('ForecastBench',matched['fb_rho'],matched['fb_interval']),('ForecastBench, given ECI',matched['fb_given_eci_rho'],matched['fb_given_eci_interval'])]:
  lines.append(f'{label} & ${point:.3f}$ & $[{interval[0]:.3f},{interval[1]:.3f}]$ '+r'\\')
 lines += [r'\bottomrule',r'\end{tabular}'];(P/'data/combined_matched_panel.tex').write_text('\n'.join(lines)+'\n')
 result.update(starsim='fixed-state continuous; binary excluded',uncertainty=combined_unc,method='current nine-cell definition; other simulations fixed; panel bootstrap does not refit theta; replay bootstrap refits fixed panel')
