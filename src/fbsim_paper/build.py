@@ -70,6 +70,7 @@ def _commands(step, data, paper, tmp):
     C = ASSETS/'combined'
     return _env(tmp), [[py, str(C/'refit_combined.py'), '--paper-root', str(paper), '--out', str(tmp/'generated')],
                        [py, str(C/'make_roster_table.py'), '--paper-root', str(paper)],
+                       [py, str(C/'partial_correlations.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_validation_tables.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_baseline_table.py'), '--paper-root', str(paper)]]
 
