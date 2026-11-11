@@ -61,6 +61,11 @@ def eci_by_slug(datadir):
         return {r["slug"]: float(r["ECI"]) for r in csv.DictReader(f)}
 
 
+def fb_by_slug(datadir):
+    with open(datadir / "model_scores.csv") as f:
+        return {r["slug"]: float(r["FBOverall"]) for r in csv.DictReader(f) if r["FBOverall"]}
+
+
 def short_names(path):
     with open(path) as f:
         return {r["model"]: r["short_name"] for r in csv.DictReader(f)}
@@ -136,6 +141,15 @@ def capability(models, per):
     y = np.array([per[m]["excess_t2"] for m in models])
     rho, rho_p = stats.spearmanr(x, -y)  # sign-adjusted: positive means more capable models score better
     return x, y, rho, rho_p, bootstrap_rho_ci(list(x), list(-y))
+
+
+def forecastbench(models, per, datadir):
+    """Sign-adjusted Spearman rho of turn-2 excess with ForecastBench overall, over the models that have it."""
+    fb = fb_by_slug(datadir)
+    have = [m for m in models if m in fb]
+    x, y = [fb[m] for m in have], [-per[m]["excess_t2"] for m in have]
+    rho, p = stats.spearmanr(x, y)
+    return dict(n=len(have), rho=float(rho), p=float(p), ci_models=bootstrap_rho_ci(x, y))
 
 
 def cell_update(scored, cells):
@@ -288,6 +302,7 @@ def main():
     upd = cell_update(scored, cells)
     summary = summarize(cells, models, scored, per, y, rho, rho_p, rho_ci, base, upd,
                         after_baselines=dict(no_mechanical=no_mechanical))
+    summary["forecastbench"] = forecastbench(models, per, args.datadir)
     paper = args.paper_root
     write_tables(paper, "natcond", cells, models, per, short, summary, BLOCKS, ["Irrel.", "Mech.", "Infer."])
 
