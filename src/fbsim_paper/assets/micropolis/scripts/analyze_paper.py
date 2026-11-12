@@ -47,7 +47,9 @@ fig_micropolis_capability.pdf is the one figure here the article places, so
 --no-extra keeps drawing it. Three ECI scatters side by side — mid-range,
 tail, continuous, in the order fbs-paper's fig_freeciv_capability.pdf lays its
 four out — drawn by fbsim_paper.capability_plot, which draws that figure too, so
-the two worlds' capability figures read as a pair.
+the two worlds' capability figures read as a pair. When the article holds the
+conditionals' summaries (micropolis_natcond.py, micropolis_intcond.py), a
+second, centered row adds their turn-2 excess Brier.
 
 Every interval the article quotes for this world is a percentile bootstrap
 over the models, which is what would have to generalize for a claim about
@@ -186,6 +188,14 @@ EXTREME_COLOR = "#e8632c"
 BASELINE_STYLE = capability_plot.BASELINE_STYLE
 
 MACROS_NAME = "micropolis-macros.tex"
+
+# The capability figure's second row: the conditionals' turn-2 excess Brier, from the summaries
+# micropolis_natcond.py and micropolis_intcond.py write into the article before this script runs.
+# Optional: without them the figure has the first row only.
+CONDITIONAL_PANELS = [
+    ("Natural conditionals", "data/micropolis/micropolis_natcond_summary.json"),
+    ("Interventional conditionals", "data/micropolis/micropolis_intcond_summary.json"),
+]
 
 # The baselines' scores, which micropolis_baselines.py writes beside the
 # gathered data before this script runs. Optional: without it the capability
@@ -980,8 +990,10 @@ def draw_capability_figure(
     found: dict[str, object],
     model_bands: dict[str, tuple],
     references: dict[str, float] | None = None,
+    conditionals: list[tuple[str, dict]] | None = None,
 ) -> Path | None:
-    """The article's capability figure: three ECI scatters side by side.
+    """The article's capability figure: three ECI scatters side by side, and
+    below them, centered, one per entry of `conditionals` (name, summary JSON).
 
     Drawn by fbsim_paper.capability_plot, as FreeCiv's fig_freeciv_capability.pdf
     is, so the two worlds' capability figures read as one pair; rho is sign-
@@ -1008,7 +1020,15 @@ def draw_capability_figure(
         return None
 
     with capability_plot.style():
-        fig, axes = capability_plot.figure(len(PANELS))
+        conditionals = conditionals or []
+        if conditionals:
+            fig, axes = capability_plot.figure_rows([len(PANELS), len(conditionals)])
+        else:
+            fig, axes = capability_plot.figure(len(PANELS))
+        for i, (ax, (name, summary)) in enumerate(
+            zip(axes[len(PANELS):], conditionals), start=len(PANELS)
+        ):
+            _draw_conditional_panel(ax, name, summary, chr(ord("a") + i))
         for i, (ax, (name, figname, ylabel)) in enumerate(zip(axes, PANELS)):
             letter = chr(ord("a") + i)
             _draw_panel(
@@ -1480,6 +1500,31 @@ def _draw_panel(
         f"({letter}) {name}",
         reference,
     )
+
+
+def _draw_conditional_panel(ax, name: str, summary: dict, letter: str) -> None:
+    """A conditionals panel: turn-2 excess Brier against ECI, with independence; rho is already sign-adjusted."""
+    points = sorted((p["eci"], p["excess_t2"]) for p in summary["per_model"].values())
+    capability_plot.draw_panel(
+        ax,
+        [e for e, _ in points],
+        [v for _, v in points],
+        capability_plot.rho_note(summary["rho"], summary["rho_ci_models"]),
+        "Turn-2 excess Brier",
+        f"({letter}) {name}",
+        summary["baselines"]["independence"],
+    )
+
+
+def load_conditionals(repo: Path | None) -> list[tuple[str, dict]]:
+    """The conditionals' summaries found in the article's checkout, in CONDITIONAL_PANELS order."""
+    from fbsim_paper.experiments import include_micropolis_conditionals
+    if not include_micropolis_conditionals():
+        return []
+    if repo is None:
+        return []
+    found = [(name, repo / rel) for name, rel in CONDITIONAL_PANELS]
+    return [(name, json.loads(path.read_text())) for name, path in found if path.is_file()]
 
 
 def macro_band(ci: tuple[float, float] | None) -> str:
@@ -4758,6 +4803,7 @@ def main() -> None:
             "Tail": baselines["tail_excess_bits"],
             "Continuous": baselines["excess_ncrps"],
         },
+        load_conditionals(paper_repo_dir()),
     )
 
     horizon_fig = draw_horizon_figure(

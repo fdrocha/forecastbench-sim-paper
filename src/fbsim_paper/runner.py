@@ -78,6 +78,7 @@ def main():
  q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
  q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
  q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
+ q.add_argument('--include-micropolis-conditionals',action='store_true',help='Opt into the additional Micropolis studies and eleven-cell score; default preserves the nine-cell ICLR R&R')
  q=s.add_parser('case-study',help='Offline FreeCiv/measles calibration in a new private output directory')
  q.add_argument('--freeciv-root',type=Path,required=True)
  q.add_argument('--measles-root',type=Path,required=True,help='Historical timeseries folder containing data/')
@@ -104,7 +105,7 @@ def main():
   if a.command=='build':
    if a.paper_root is None:p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')
    from .build import run
-   try:run(a.steps,a.data_root.resolve(),Path(a.paper_root).expanduser().resolve(),a.allow_dirty)
+   try:run(a.steps,a.data_root.resolve(),Path(a.paper_root).expanduser().resolve(),a.allow_dirty,a.include_micropolis_conditionals)
    except ValueError as e:p.error(str(e))
    except subprocess.CalledProcessError as e:sys.exit(f'build failed: {e.cmd[1]} exited with status {e.returncode}')
    return

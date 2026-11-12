@@ -1,4 +1,4 @@
-"""Partial Spearman correlation of each of the nine scores with ForecastBench overall, ECI partialled out (Appendix C).
+"""Partial Spearman correlation of each combined-score cell with ForecastBench overall, ECI partialled out (Appendix C).
     python partial_correlations.py --paper-root PAPER
 
 Writes data/validation_partial_forecastbench.json, read by make_validation_tables.py. Sign-adjusted so that positive
@@ -37,7 +37,7 @@ def partial_with_ci(x, y, z, idx=None):
 
 
 def load_cells(paper):
-    """The nine per-model loss cells, models, ECI and ForecastBench overall, as combined_score.py reads them."""
+    """The per-model loss cells of the combined score, models, ECI and ForecastBench overall, as combined_score.py reads them."""
     here = Path(__file__).resolve().parent
     argv, path = sys.argv, list(sys.path)
     sys.path.insert(0, str(here)); sys.argv = ['combined', '--paper-root', str(paper), '--out', '/dev/null']

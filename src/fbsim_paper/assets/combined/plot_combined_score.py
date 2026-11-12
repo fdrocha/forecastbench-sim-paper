@@ -49,17 +49,31 @@ def place_labels(fig, ax, pts, keep, fitted, avoid=()):
                  (7, 0, "left", "center"), (-7, 0, "right", "center")]
         if not up:
             tries = tries[2:4] + tries[:2] + tries[4:]
+        # then the same directions farther out, for crowded corners
+        from fbsim_paper.experiments import include_micropolis_conditionals
+        extended = include_micropolis_conditionals()
+        if extended:
+            tries += [(k * dx, k * dy, ha, va) for k in (2, 3) for dx, dy, ha, va in tries]
+        others = [b for j, b in enumerate(marks) if j != i]
+        best = None  # (clashes, try) of the least crowded try, used when none is clear; a label on a label is worst
         for dx, dy, ha, va in tries:
             t = ax.annotate(m, (x, y), xytext=(dx, dy), textcoords="offset points", ha=ha, va=va, fontsize=6.5)
             box = t.get_window_extent(renderer).padded(pad)
             inside = frame.x0 <= box.x0 and box.x1 <= frame.x1 and frame.y0 <= box.y0 and box.y1 <= frame.y1
-            others = [b for j, b in enumerate(marks) if j != i]
-            if inside and not any(box.overlaps(o) for o in taken + others):
+            clashes = 10 * sum(box.overlaps(o) for o in taken) + sum(box.overlaps(o) for o in others) + (0 if inside else 100)
+            if clashes == 0:
                 break
+            if best is None or clashes < best[0]:
+                best = (clashes, (dx, dy, ha, va))
             t.remove()
         else:
-            t = ax.annotate(m, (x, y), xytext=tries[0][:2], textcoords="offset points", ha=tries[0][2], va=tries[0][3], fontsize=6.5)
+            dx, dy, ha, va = best[1] if extended else tries[0]
+            t = ax.annotate(m, (x, y), xytext=(dx, dy), textcoords="offset points", ha=ha, va=va, fontsize=6.5)
             box = t.get_window_extent(renderer).padded(pad)
+        if max(abs(v) for v in t.xyann) > 7:  # far from its point: a leader line says whose label it is
+            t.remove()
+            t = ax.annotate(m, (x, y), xytext=t.xyann, textcoords="offset points", ha=t.get_ha(), va=t.get_va(),
+                            fontsize=6.5, arrowprops=dict(arrowstyle="-", lw=0.4, color=GREY, shrinkA=0, shrinkB=2.5))
         taken.append(box)
 
 def write_figure(r, out_dir):
