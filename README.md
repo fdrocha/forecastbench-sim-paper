@@ -59,6 +59,13 @@ To use your forecastbench-sim checkout instead of the pinned benchmark, run `./b
 
 There are no hash checks and no snapshot copy, so `build` works while code and inputs change; `validate` and `reproduce` are for frozen releases. Figures get a fixed PDF date (`SOURCE_DATE_EPOCH=0` unless set), so an unchanged figure leaves no diff. A full build takes about 2.5 minutes. Hand-written files are not generated: `openrouter_ids_table.tex`, `human_pilot_table.tex` and the schematic. Generated files carry no review markup: when a generated table or figure changes visibly, note it in its caption in the manuscript with `\changenote`.
 
+## Historical forecasting case study
+
+`fbsim-paper case-study` reproduces the FreeCiv/measles upper-quantile comparison
+from retained private forecasts, including bootstrap intervals, matched domain-label
+sensitivity and the manuscript chart. It writes to a new private directory, with
+networking disabled. See [inputs, commands and limitations](docs/CALIBRATION_CASE_STUDY.md).
+
 ## Releasing a paper version (planned)
 
 Not implemented yet; this is the agreed plan. When a version of the paper is released:

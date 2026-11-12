@@ -1,0 +1,25 @@
+{
+  "description": "Migrated from offline exploratory calibration audit scripts. Path injection and input hashes added; original cohorts, diagnostics, bootstrap seed, and aggregation retained.",
+  "sources": [
+    {
+      "name": "shared_failure.py",
+      "sha256": "7796fb58e77c78dc7303ac59f4cf93ea80d1c960c78af85b8d8becb1b7150174"
+    },
+    {
+      "name": "shared_failure_robustness.py",
+      "sha256": "918e7841e934551bee2778944fc01d5457a56b5762b1f124e14ab437d1ab63fd"
+    },
+    {
+      "name": "shared_failure_context.py",
+      "sha256": "e270e95d0046b0b830ccb37fd345950119c44363ae188a5a213f8813fa5b8b9e"
+    },
+    {
+      "name": "shared_failure_parser_audit.py",
+      "sha256": "c448010a261fc325e07bf39ecc1bc5148cd8bb46810f8f39501771e80575d5da"
+    },
+    {
+      "name": "build_shared_failure_report.py",
+      "sha256": "0f043e3bbd2d4b5a63f6f421b456d501cdcae951a6eefefb19f62103992f2d4f"
+    }
+  ]
+}

@@ -78,7 +78,19 @@ def main():
  q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
  q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
  q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
+ q=s.add_parser('case-study',help='Offline FreeCiv/measles calibration in a new private output directory')
+ q.add_argument('--freeciv-root',type=Path,required=True)
+ q.add_argument('--measles-root',type=Path,required=True,help='Historical timeseries folder containing data/')
+ q.add_argument('--measles-roster',type=Path,required=True,help='Private JSON mapping model IDs to ECI scores')
+ q.add_argument('--output',type=Path,required=True)
+ q.add_argument('--freeciv-raw-repo',type=Path,help='Also audit parsing; Git checkout retaining archived FreeCiv calls')
+ q.add_argument('--freeciv-raw-ref',default='daca5a15af759f4124960e30694bff15256b7f5d')
  a=p.parse_args()
+ if a.command=='case-study':
+  from .case_study import run
+  try:result=run(a.freeciv_root,a.measles_root,a.measles_roster,a.output,a.freeciv_raw_repo,a.freeciv_raw_ref)
+  except (ValueError,FileNotFoundError) as e:p.error(str(e))
+  print(json.dumps(result,indent=2));return
  if a.command=='smoke':
   assert pandemic.crps5([1,1,1,1,1],[1])==0;print(json.dumps(dict(status='PASS',scope='import and synthetic scoring only; no paper inputs')))
  else:
