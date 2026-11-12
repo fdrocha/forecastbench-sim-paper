@@ -94,6 +94,17 @@
       "network": false,
       "side_effects": "overwrites generated files in the manuscript checkout (refused if it has uncommitted changes there, unless --allow-dirty); review with git there",
       "production": false
+    },
+    {
+      "id": "case-study",
+      "command": "fbsim-paper case-study --freeciv-root \"$FREECIV_RETAINED_ROOT\" --measles-root \"$HISTORICAL_TIMESERIES_ROOT\" --measles-roster \"$HISTORICAL_MODEL_ROSTER\" --output \"$NEW_CALIBRATION_OUTPUT\"",
+      "inputs": "Retained FreeCiv forecasts/replays, historical measles scores/series and model roster; optional archived raw responses",
+      "outputs": "Private diagnostics, source hashes, bootstrap/sensitivity tables and manuscript two-bar figure",
+      "access": "Private inputs; not distributed",
+      "network": false,
+      "production": false,
+      "cost_usd": 0,
+      "side_effects": "Creates a new private output directory only; no archive or manuscript changes"
     }
   ],
   "production_replay": "not exposed; separate explicit authorization, engine dependencies and private configs required"

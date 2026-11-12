@@ -21,4 +21,4 @@ where = ["src"]
 "*" = ["assets/**/*"]
 
 [tool.setuptools.data-files]
-"share/forecastbench-sim-paper" = ["docs/ATTRIBUTION.md", "docs/SOURCE_MAPPING.json", "docs/BOUNDARIES.md", "docs/MANUSCRIPT_STATUS.md", "docs/MIGRATION_GAPS.md", "docs/PRODUCTION_PROVENANCE.md"]
+"share/forecastbench-sim-paper" = ["docs/ATTRIBUTION.md", "docs/SOURCE_MAPPING.json", "docs/BOUNDARIES.md", "docs/MANUSCRIPT_STATUS.md", "docs/MIGRATION_GAPS.md", "docs/PRODUCTION_PROVENANCE.md", "docs/CALIBRATION_CASE_STUDY.md", "docs/CALIBRATION_SOURCE_MAPPING.json"]

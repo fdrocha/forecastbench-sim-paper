@@ -11,3 +11,5 @@ This source export is distributed under GPL-3.0-only; see LICENSE. Preserve exis
 SOURCE_MAPPING.json retains the available original file hashes and migration transformations. A production-setting comment in the Starsim roster loader was removed for the public export; its executable AST is unchanged. Other scientific Python source remains byte-identical to the reviewed paper home. Original source and history remain privately preserved; no original history is rewritten.
 
 The inherited GPL text has SHA256 8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903. Historical path names in source mappings identify provenance, not publicly available data bundles.
+
+The calibration package migrates the offline FreeCiv/measles case-study audit, retaining its statistical definitions and cohorts. Source-script SHA-256 hashes and the migration scope are in CALIBRATION_SOURCE_MAPPING.json. Historical measles forecasts, series and the historical model/ECI roster remain external private inputs; they are not included in this code release.
