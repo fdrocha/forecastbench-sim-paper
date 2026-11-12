@@ -28,18 +28,23 @@ SIMS = {'Micropolis': [(MICRO, c, None) for c in ('mid_range_excess_brier', 'tai
                                               'continuous_all_excess_ncrps_global', 'natcond_all_excess_t2')],
         'Starsim': [(STAR, 'excess', star('continuous', 'unconditional', '-')),
                     (STAR, 'excess', star('continuous', 'interventional', 'pooled(c25,c50,c90)'))]}
+# Micropolis conditionals, answered by a subset of the models, as in the combined score: only where the manuscript has them.
+PARTIAL = [f'micropolis/micropolis_{s}_scores.csv' for s in ('natcond', 'intcond')]
+from fbsim_paper.experiments import include_micropolis_conditionals
+SIMS['Micropolis'] += [(p, 'excess_t2', None) for p in PARTIAL if include_micropolis_conditionals() and (DATA / p).is_file()]
 
 
 def load(path, col, keep):
-    """One loss per model; NaN if empty or the row is marked incomplete."""
+    """One loss per model; NaN if empty, the row is marked incomplete or the model was not asked."""
     out = {}
     for r in csv.DictReader(open(DATA / path)):
         if keep and not keep(r): continue
         m = NAMES.get(r['model'], r['model'])
         if m in out: raise ValueError(f'{path} {col}: two rows for {m}')
         out[m] = float(r[col]) if r[col] and r.get('complete', 'True') == 'True' else np.nan
-    if set(out) != set(MODELS): raise ValueError(f'{path} {col}: roster mismatch')
-    return [out[m] for m in MODELS]
+    if set(out) != set(MODELS) and not (path in PARTIAL and set(out) <= set(MODELS)):
+        raise ValueError(f'{path} {col}: roster mismatch')
+    return [out.get(m, np.nan) for m in MODELS]
 
 
 def fit(L, iters=500):
@@ -53,7 +58,7 @@ def fit(L, iters=500):
 
 spearman = lambda a, b: float(stats.spearmanr(a, b).statistic)
 cells = {s: np.column_stack([load(*c) for c in cs]) for s, cs in SIMS.items()}
-assert np.abs(fit(np.hstack(list(cells.values()))) - [COMBINED[m] for m in MODELS]).max() < 1e-15, 'nine-cell fit differs'
+assert np.abs(fit(np.hstack(list(cells.values()))) - [COMBINED[m] for m in MODELS]).max() < 1e-15, 'all-cell fit differs from combined_score.json'
 eci_by = {NAMES.get(r['model'], r['model']): float(r['eci']) for r in csv.DictReader(open(DATA / FREE))}
 series = {'ECI': np.array([eci_by[m] for m in MODELS]), **{s: fit(L) for s, L in cells.items()}}
 idx = np.random.default_rng(0).integers(0, len(MODELS), size=(5000, len(MODELS)))[:3000]

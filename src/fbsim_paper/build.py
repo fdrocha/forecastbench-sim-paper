@@ -3,6 +3,7 @@ from pathlib import Path
 import shutil, subprocess, sys, tempfile, time
 from .cached import _env, commands
 from .runner import ASSETS, analysis_root
+from .experiments import CONDITIONALS_ENV
 
 # In dependency order: the combined step refits the combined score and writes the cross-world tables from the
 # other three steps' files.
@@ -12,6 +13,8 @@ FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
 FREECIV_RUN = 'run2_paper'
 FREECIV_CANDIDATES = 'datasets/freeciv-candidates'
 FREECIV_FRACTIONS = 'datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1/sets/draw_v1/selection_fractions_bank_tails_mirrors.json'
+MICROPOLIS_NATCOND = 'datasets/micropolis-natcond'
+MICROPOLIS_INTCOND = 'datasets/micropolis-intcond'
 
 def stage(inputs, paper):
     """Copy each file of paper-inputs to the same path under the manuscript's data/, if its content differs."""
@@ -29,14 +32,18 @@ def uncommitted(paper):
     out = subprocess.run(['git', '-C', str(paper), 'status', '--porcelain', '--', 'data', 'figures'], capture_output=True, text=True, check=True)
     return out.stdout.splitlines()
 
-def _commands(step, data, paper, tmp):
+def _commands(step, data, paper, tmp, include_conditionals=False):
     """(env, commands) for a step; a command is an argv list or a callable."""
     py = sys.executable
     if step == 'micropolis':
-        # The baselines first, beside the inputs: analyze_paper.py draws them and delivers the JSON with the data.
+        # The baselines and the conditionals first: analyze_paper.py draws them in the capability figure (the
+        # baselines' JSON beside the inputs, which it delivers with the data; the conditionals' summaries in the paper).
         env, cmds = commands(step, data, paper, tmp, data/INPUTS/'micropolis')
+        common = ['--datadir', str(tmp/'inputs'), '--model-names', str(data/INPUTS/'model_names.csv'), '--paper-root', str(paper)]
+        natcond = [py, str(ASSETS/'micropolis/scripts/micropolis_natcond.py'), '--natcond', str(data/MICROPOLIS_NATCOND)] + common
+        intcond = [py, str(ASSETS/'micropolis/scripts/micropolis_intcond.py'), '--intcond', str(data/MICROPOLIS_INTCOND)] + common
         return env, [[py, str(ASSETS/'micropolis/scripts/micropolis_baselines.py'), '--datadir', str(tmp/'inputs'),
-                      '--out', str(tmp/'inputs'/'micropolis_baselines.json')]] + cmds
+                      '--out', str(tmp/'inputs'/'micropolis_baselines.json')]] + ([natcond, intcond] if include_conditionals else []) + cmds
     if step == 'freeciv':
         src = data/FREECIV; results = src/'results'; A = ASSETS/'freeciv'
         env = _env(tmp); env.update(FBSIM_SOURCE_ROOT=str(src), FBSIM_RUN=FREECIV_RUN, FBSIM_PAPER_ROOT=str(paper))
@@ -68,16 +75,20 @@ def _commands(step, data, paper, tmp):
                            [py, str(ASSETS/'starsim'/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
                             '--audit-root', str(audit), '--out', str(tmp/'generated')]]
     C = ASSETS/'combined'
+    # This diagnostic reconstructs the manuscript's nine cells and checks them
+    # against the combined fit. It does not cover the additional studies.
+    generalization = [] if include_conditionals else [
+        [py, str(C/'generalization.py'), '--paper-root', str(paper),
+         '--freeciv-scores', str(data/FREECIV/'results'/FREECIV_RUN/'scores_v1/score_items.csv.gz')]]
     return _env(tmp), [[py, str(C/'refit_combined.py'), '--paper-root', str(paper), '--out', str(tmp/'generated')],
-                       [py, str(C/'simulator_scores.py'), '--paper-root', str(paper)],
-                       [py, str(C/'generalization.py'), '--paper-root', str(paper),
-                        '--freeciv-scores', str(data/FREECIV/'results'/FREECIV_RUN/'scores_v1/score_items.csv.gz')],
+                       [py, str(C/'simulator_scores.py'), '--paper-root', str(paper)]] + generalization + [
                        [py, str(C/'make_roster_table.py'), '--paper-root', str(paper)],
                        [py, str(C/'partial_correlations.py'), '--paper-root', str(paper)],
+                       [py, str(C/'external_benchmarks.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_validation_tables.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_baseline_table.py'), '--paper-root', str(paper)]]
 
-def run(steps, data, paper, allow_dirty=False):
+def run(steps, data, paper, allow_dirty=False, include_conditionals=False):
     unknown = set(steps) - set(STEPS)
     if unknown: raise ValueError(f'Unknown step {", ".join(sorted(unknown))}; choose from {", ".join(STEPS)}')
     steps = [s for s in STEPS if s in steps] if steps else STEPS
@@ -90,11 +101,14 @@ def run(steps, data, paper, allow_dirty=False):
                          + '\n  '.join(dirty) + '\nCommit or discard them, or pass --allow-dirty.')
     start = time.monotonic()
     print(f'paper:  {paper}\ninputs: {inputs}\nsteps:  {", ".join(steps)}')
+    if include_conditionals and 'combined' in steps:
+        print('Optional conditional studies enabled: the nine-cell generalization diagnostic is not regenerated; existing diagnostic files describe the original instrument.')
     for p in stage(inputs, paper): print(f'Staged {p.relative_to(paper)}')
     with tempfile.TemporaryDirectory(prefix='fbsim-build-') as t:
         for step in steps:
             tmp = Path(t)/step; tmp.mkdir()
-            env, cmds = _commands(step, data, paper, tmp)
+            env, cmds = _commands(step, data, paper, tmp, include_conditionals)
+            env[CONDITIONALS_ENV] = '1' if include_conditionals else '0'
             env.setdefault('SOURCE_DATE_EPOCH', '0')  # fixed PDF dates, so an unchanged figure leaves no diff
             for cmd in cmds:
                 print(f'\n== {step}: {cmd.__name__ if callable(cmd) else Path(cmd[1]).name}', flush=True)

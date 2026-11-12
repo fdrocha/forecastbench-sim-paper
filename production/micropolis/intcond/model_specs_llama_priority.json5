@@ -1,0 +1,7 @@
+// Llama 4 Scout on DeepInfra's priority tier (same provider and fp8 weights as
+// the paper's "deepinfra" pin), as for the natcond Llama run.
+{
+  "meta-llama/llama-4-scout": {
+    endpoint: "deepinfra/fp8/priority",
+  },
+}

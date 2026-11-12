@@ -1,5 +1,5 @@
 {
- "note": "Every file here is a byte-for-byte copy of its source. Not rerun since the paper.",
+ "note": "Every file here is a byte-for-byte copy of its source, except where its own note says otherwise. Not rerun since the paper.",
  "files": [
   {
    "path": "micropolis/configs/batching/binary-subset-100q.json5",
@@ -189,7 +189,9 @@
   {
    "path": "micropolis/micropolis_world/datafiles/model_scores.csv",
    "source": "github.com/fdrocha/forecastbench-sim@8c70972b698f079d54b8a2255c81fbefc55e7d99:worlds/micropolis/micropolis_world/datafiles/model_scores.csv",
-   "sha256": "27127ce94f7f8b917dace24b5bafe9d29ccf2ab6e64c99088b1619b684bd6d99"
+   "sha256": "7541d63534e0ab490918e13bb0d3fbf1b845a8cde2eeccf52205489f1d95cc52",
+   "source_sha256": "27127ce94f7f8b917dace24b5bafe9d29ccf2ab6e64c99088b1619b684bd6d99",
+   "note": "The source plus the FutureEval and Prophet Arena columns (FEName to PABrierCIHalf), added after the runs for Appendix C; the other columns' values are unchanged, and the source's CRLF line endings are now LF."
   },
   {
    "path": "micropolis/micropolis_world/datafiles/models.csv",
@@ -775,6 +777,26 @@
    "path": "freeciv/fleet/pod_bundle/packages/fbsim-core/tests/test_resolver_registry.py",
    "source": "github.com/forecastingresearch/forecastbench-sim@daca5a15af759f4124960e30694bff15256b7f5d:worlds/freeciv/fbsim_v3/fleet/pod_bundle/packages/fbsim-core/tests/test_resolver_registry.py",
    "sha256": "112264b047a72e60d9a5f0b078f2413f583d82239f6e8f3a23f4a4ab2b7d7a9a"
+  },
+  {
+   "path": "micropolis/natcond/models-22.json5",
+   "source": "github.com/fdrocha/forecastbench-sim@e892da8c:worlds/micropolis/configs/models-22.json5",
+   "sha256": "1a1494f9c81b03de2e7195be82d8c30870660b06b2a4434aa5ea1c6e1421368e"
+  },
+  {
+   "path": "micropolis/natcond/models-21-no-llama.json5",
+   "source": "local run folder fbsim-local/data/micropolis/natcond (not in Git; November 3, 2026): models-21-no-llama.json5",
+   "sha256": "38497f4f07f3f906ec71f639ee87b2935d6e4ec17d6a31ae4ecfaedb78fc99a8"
+  },
+  {
+   "path": "micropolis/natcond/model_specs_llama_priority.json5",
+   "source": "local run folder fbsim-local/data/micropolis/natcond (not in Git; November 3, 2026): natcond_400_seed42_elicit_llama/model_specs_llama_priority.json5",
+   "sha256": "84e74b4965473e457bf5b0940e2dd4bc2dc8e2e16776c18fd5959a0649c13779"
+  },
+  {
+   "path": "micropolis/intcond/model_specs_llama_priority.json5",
+   "source": "local run folder fbsim-local/data/micropolis/intcond (not in Git; November 5, 2026): intcond_400_seed42_elicit_llama/model_specs_llama_priority.json5",
+   "sha256": "f02876ffd84106d2a04609609d051d94c564ba2a6fd4ba66c6eab8e5c19d7ba2"
   }
  ]
 }

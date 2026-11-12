@@ -1,0 +1,7 @@
+// Probe only: Llama 4 Scout on DeepInfra's priority tier (same provider and fp8
+// weights as the paper's "deepinfra" pin), while its standard pool returns 429s.
+{
+  "meta-llama/llama-4-scout": {
+    endpoint: "deepinfra/fp8/priority",
+  },
+}
