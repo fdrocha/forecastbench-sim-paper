@@ -2,7 +2,7 @@
 
 How the paper's inputs were produced, from scratch: production configs, seeds, prompts, model panels and producer scripts. The package commands (`python -m fbsim_paper ...`) never run anything here. They start from the cached outputs in the private data archive.
 
-Every file is a byte-for-byte copy of what ran; [PROVENANCE.json](PROVENANCE.json) gives each file's source and SHA-256. Scripts keep their original absolute paths (`/Users/elsehow/Projects/...`), and several check their inputs' hashes by those paths, so adjust paths in a working copy, not here. Nothing here has been rerun since the paper.
+Every file is a byte-for-byte copy of what ran, except `micropolis/micropolis_world/datafiles/model_scores.csv`, which has gained the FutureEval and Prophet Arena columns since; [PROVENANCE.json](PROVENANCE.json) gives each file's source and SHA-256. Scripts keep their original absolute paths (`/Users/elsehow/Projects/...`), and several check their inputs' hashes by those paths, so adjust paths in a working copy, not here. Nothing here has been rerun since the paper.
 
 ## Starsim
 
