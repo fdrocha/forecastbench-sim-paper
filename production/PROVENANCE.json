@@ -1,5 +1,5 @@
 {
- "note": "Every file here is a byte-for-byte copy of its source. Not rerun since the paper.",
+ "note": "Every file here is a byte-for-byte copy of its source, except where its own note says otherwise. Not rerun since the paper.",
  "files": [
   {
    "path": "micropolis/configs/batching/binary-subset-100q.json5",
@@ -189,7 +189,9 @@
   {
    "path": "micropolis/micropolis_world/datafiles/model_scores.csv",
    "source": "github.com/fdrocha/forecastbench-sim@8c70972b698f079d54b8a2255c81fbefc55e7d99:worlds/micropolis/micropolis_world/datafiles/model_scores.csv",
-   "sha256": "27127ce94f7f8b917dace24b5bafe9d29ccf2ab6e64c99088b1619b684bd6d99"
+   "sha256": "7541d63534e0ab490918e13bb0d3fbf1b845a8cde2eeccf52205489f1d95cc52",
+   "source_sha256": "27127ce94f7f8b917dace24b5bafe9d29ccf2ab6e64c99088b1619b684bd6d99",
+   "note": "The source plus the FutureEval and Prophet Arena columns (FEName to PABrierCIHalf), added after the runs for Appendix C; the other columns' values are unchanged, and the source's CRLF line endings are now LF."
   },
   {
    "path": "micropolis/micropolis_world/datafiles/models.csv",

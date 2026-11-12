@@ -72,6 +72,7 @@ def _commands(step, data, paper, tmp):
                        [py, str(C/'simulator_scores.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_roster_table.py'), '--paper-root', str(paper)],
                        [py, str(C/'partial_correlations.py'), '--paper-root', str(paper)],
+                       [py, str(C/'external_benchmarks.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_validation_tables.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_baseline_table.py'), '--paper-root', str(paper)]]
 
