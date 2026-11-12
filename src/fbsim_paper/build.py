@@ -70,6 +70,8 @@ def _commands(step, data, paper, tmp):
     C = ASSETS/'combined'
     return _env(tmp), [[py, str(C/'refit_combined.py'), '--paper-root', str(paper), '--out', str(tmp/'generated')],
                        [py, str(C/'simulator_scores.py'), '--paper-root', str(paper)],
+                       [py, str(C/'generalization.py'), '--paper-root', str(paper),
+                        '--freeciv-scores', str(data/FREECIV/'results'/FREECIV_RUN/'scores_v1/score_items.csv.gz')],
                        [py, str(C/'make_roster_table.py'), '--paper-root', str(paper)],
                        [py, str(C/'partial_correlations.py'), '--paper-root', str(paper)],
                        [py, str(C/'make_validation_tables.py'), '--paper-root', str(paper)],
