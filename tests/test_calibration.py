@@ -84,3 +84,20 @@ def test_case_study_cli_has_explicit_paths():
     assert result.returncode==0
     for flag in ['--freeciv-root','--measles-root','--measles-roster','--output','--freeciv-raw-repo']:
         assert flag in result.stdout
+
+
+def test_build_step_delivers_only_plot_files(tmp_path, monkeypatch):
+    from fbsim_paper import build, case_study as cs
+    seen = []
+    def fake_run(fc, ts, roster, out):
+        seen.append((fc, ts, roster)); out.mkdir()
+        (out/'run-status.json').write_text(json.dumps(dict(status='PASS')))
+        for name in [*cs.PAPER_FILES, 'measles-diagnostics.npz']: (out/name).write_text(name)
+    monkeypatch.setattr(cs, 'run', fake_run)
+    paper = tmp_path/'paper'; (paper/'data').mkdir(parents=True); (paper/'figures').mkdir()
+    tmp = tmp_path/'tmp'; tmp.mkdir()
+    _, cmds = build._commands('case-study', tmp_path/'data', paper, tmp)
+    for c in cmds: c()
+    assert seen == [cs.archive_inputs(tmp_path/'data')]
+    assert sorted(str(p.relative_to(paper)) for p in paper.rglob('*') if p.is_file()) == sorted(cs.PAPER_FILES.values())
+

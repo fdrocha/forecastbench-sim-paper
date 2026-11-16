@@ -7,6 +7,20 @@ import os
 import subprocess
 import sys
 
+# Inputs in the data archive, relative to its data/ folder.
+FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
+MEASLES = 'datasets/measles-case-study/timeseries'
+ROSTER = 'datasets/measles-case-study/measles-roster.json'
+# The manuscript files the build delivers, by output file name.
+PAPER_FILES = {'calibration_case_study.csv': 'data/calibration_case_study.csv',
+               'calibration_case_study.pdf': 'figures/calibration_case_study.pdf'}
+
+
+def archive_inputs(data):
+    """(freeciv_root, measles_root, measles_roster) in the data archive."""
+    data = Path(data)
+    return data/FREECIV, data/MEASLES, data/ROSTER
+
 
 def run(freeciv_root, measles_root, measles_roster, output, raw_repo=None,
         raw_ref='daca5a15af759f4124960e30694bff15256b7f5d'):

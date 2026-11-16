@@ -28,7 +28,17 @@ the frozen `validate` route and does not claim to validate the entire data archi
   some historical ECI entries are estimates. The mapping is also the canonical
   filename-to-model lookup used by the original audit. Its SHA-256 is recorded.
 
-For example, with these paths set in your shell:
+In the private data archive, the FreeCiv root is
+`datasets/freeciv-source/worlds/freeciv/fbsim_v3`, and the measles root and roster
+are `datasets/measles-case-study/timeseries` and
+`datasets/measles-case-study/measles-roster.json` (no raw responses, so no parser audit).
+Any of the three paths not given defaults to these, under `--data-root` (or `FBSIM_DATA_ROOT`):
+
+```sh
+fbsim-paper case-study --output "$NEW_CALIBRATION_OUTPUT"
+```
+
+Or with explicit paths:
 
 ```sh
 fbsim-paper case-study \
@@ -108,10 +118,12 @@ uncertainty and generalization claims.
 - Input and analysis-source hash manifests, `verification.json`, `uncertainty-method.json`,
   `run-config.json`, `run-status.json`: private provenance and completion receipts.
 
-After review, the aggregate plot CSV corresponds to manuscript
+The aggregate plot CSV corresponds to manuscript
 `data/calibration_case_study.csv`, and the PDF to
-`figures/calibration_case_study.pdf`. Copying those two reviewed artifacts is a
-separate manuscript update; this command does not publish them. Never copy the
+`figures/calibration_case_study.pdf`. `fbsim-paper build case-study` (part of the
+default build) runs this command on the archive's inputs in a temporary directory and
+copies only those two files into the manuscript; review the diff there as for any
+build output. `case-study` itself never writes to the manuscript. Never copy the
 private arrays, source hashes, raw parsing excerpts or run receipts into Git.
 
 `tests/test_calibration.py` uses synthetic data, so hosted CI needs no private
