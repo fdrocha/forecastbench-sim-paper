@@ -105,6 +105,28 @@
       "production": false,
       "cost_usd": 0,
       "side_effects": "Creates a new private output directory only; no archive or manuscript changes"
+    },
+    {
+      "id": "supplement",
+      "command": "fbsim-paper supplement [--out NEW_DIR]",
+      "inputs": "$FBSIM_DATA_ROOT (incl. datasets/supplement-anonymization) and the committed manuscript checkout ($FBSIM_PAPER_ROOT)",
+      "outputs": "anonymized reviewer supplement folder and zip beside the archive",
+      "access": "Private inputs; output is for OpenReview upload by the authors",
+      "network": false,
+      "production": false,
+      "cost_usd": 0,
+      "side_effects": "Creates a new folder and zip only; never overwrites"
+    },
+    {
+      "id": "compare",
+      "command": "fbsim-paper compare EXPECTED_PAPER REBUILT_PAPER",
+      "inputs": "two paper folders (data/ and figures/)",
+      "outputs": "stdout JSON; nonzero exit on differences",
+      "access": "public code",
+      "network": false,
+      "production": false,
+      "cost_usd": 0,
+      "side_effects": "none"
     }
   ],
   "production_replay": "not exposed; separate explicit authorization, engine dependencies and private configs required"

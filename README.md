@@ -71,6 +71,12 @@ sensitivity and the manuscript chart. It writes to a new private directory, with
 networking disabled; input paths not given default to the archive's copies under `--data-root`.
 `build case-study` delivers only the chart's CSV and PDF to the manuscript. See [inputs, commands and limitations](docs/CALIBRATION_CASE_STUDY.md).
 
+## Supplement for reviewers
+
+`fbsim-paper supplement` writes the anonymized data supplement for OpenReview, as a folder and a zip named after the manuscript commit, beside the data archive (`--out` to choose; it never overwrites). It holds every archive input that `build` reads, the further items Appendix F describes, and a snapshot of the manuscript's generated `data/` and `figures/` (no LaTeX source). It applies the replacements in the archive's `datasets/supplement-anonymization/`, fails if a blocklisted string remains or the zip exceeds 95 MB (`--max-mb`), and refuses a manuscript with uncommitted generated files (`--allow-dirty`). Build the manuscript and commit its output first, so the snapshot matches a rebuild.
+
+Reviewers rebuild into a copy of the snapshot and check it with `fbsim-paper compare paper paper-rebuilt` (JSON by value to 1e-12, ignoring `generated` dates; PDFs without embedded metadata; everything else byte for byte). The anonymized code mirror rewrites the benchmark's GitHub URL, so they install it from the downloaded anonymized benchmark repository: `FBSIM_BENCHMARK_DIR=<its folder> ./install.sh`.
+
 ## Releasing a paper version (planned)
 
 For the current R&R configuration and remaining input dependencies, see

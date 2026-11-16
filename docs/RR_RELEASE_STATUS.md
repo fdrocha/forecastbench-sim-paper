@@ -22,37 +22,15 @@ the manuscript, including partial correlations and finite-bootstrap counts.
 The historical measles comparison is reproduced separately by
 `fbsim-paper case-study`; see `CALIBRATION_CASE_STUDY.md`.
 
-## Remaining release dependencies
+## Reviewer supplement
 
-This is not a newly frozen archive or a completed full reproduction. The
-`validate` and `reproduce` commands deliberately retain their existing v1
-manifests until a complete R&R input bundle can be checked and frozen.
+`fbsim-paper supplement` writes the anonymized supplement for OpenReview from the
+archive and the manuscript checkout: every archive input that `fbsim-paper build`
+reads (including the FreeCiv candidate export, the measles inputs and the raw
+responses that the effort check and case study read), the items Appendix F
+describes, and a snapshot of the manuscript's generated files. Reviewers rebuild
+into a copy of that snapshot and check it with `fbsim-paper compare`. The other
+raw model responses are posted before publication, as Appendix F states.
 
-The missing FreeCiv baseline inputs are
-`datasets/freeciv-candidates/binary_candidates.csv` and
-`datasets/freeciv-candidates/continuous_candidates.npz`, or the original
-candidate banks plus their export provenance. Saved baseline summaries do not
-replace independent regeneration from these inputs. These candidate pools
-contain truths for unasked questions; under the archive policy they stay out of
-Git and the public data package. Reviewer access and any distributable derived
-material need to be arranged separately.
-
-To finish the R&R freeze:
-
-1. Add the missing inputs to the authorized private archive, update its
-   `CHANGES.md`, and run `fbsim-paper check-archive` to preserve v1.
-2. Build the default nine-cell manuscript in a disposable checkout and run the
-   case study separately. Compare every generated result with the final
-   manuscript, investigating differences rather than changing frozen inputs.
-3. Follow the README's release procedure: retain the final manuscript snapshot,
-   hash every required input/output, point the R&R reproduction routes at the
-   new manifest, and freeze the new archive version. Keep v1 reproducible.
-4. Refresh and verify the anonymized code repositories linked in the manuscript
-   against the merged commits. Code merges do not establish mirror freshness or
-   publish the private archive.
-5. Prepare the reviewer supplement from approved materials and check its
-   inventory. The author handles the PDF and supplementary upload to OpenReview.
-
-The existing reviewer supplement includes raw model responses but not the
-candidate export above. Its availability to reviewers is separate from the
-promised public release of raw responses before publication.
+The `validate` and `reproduce` commands still target the v1 (f214afe3) release;
+no new archive version is frozen during the R&R.
