@@ -94,11 +94,12 @@ def main():
  q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
  q.add_argument('--max-mb',type=float,default=95,help='Fail if the zip is larger (default 95)')
  q=s.add_parser('compare',help='Compare a rebuilt paper folder with the expected one (data/ and figures/)')
+ q.add_argument('--strict-figures',action='store_true',help='Also fail on image encoding or rendering differences (except PDF metadata)')
  q.add_argument('expected',type=Path);q.add_argument('rebuilt',type=Path)
  a=p.parse_args()
  if a.command=='compare':
   from .compare import run
-  try:result=run(a.expected,a.rebuilt)
+  try:result=run(a.expected,a.rebuilt,a.strict_figures)
   except ValueError as e:p.error(str(e))
   print(json.dumps(result,indent=2))
   if result['status']!='PASS':sys.exit(f"{len(result['differences'])} files differ")

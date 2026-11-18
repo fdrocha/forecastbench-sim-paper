@@ -1,6 +1,7 @@
 """Compare two paper folders' data/ and figures/: JSON by value, PDFs without metadata, the rest byte for byte."""
 from pathlib import Path
-import json, math, re
+import json, math, re, subprocess
+from PIL import Image
 
 TOL = 1e-12
 PDF_META = re.compile(rb'/(CreationDate|ModDate|Producer|Creator) *\([^)]*\)|/ID *\[[^\]]*\]')
@@ -28,17 +29,39 @@ def _status(a, b):
     return 'differs'
 
 
-def run(expected, rebuilt):
+def _figure_status(a, b):
+    """Check that changed images are readable before reporting them for review."""
+    if a.suffix == '.png':
+        try:
+            with Image.open(a) as x, Image.open(b) as y:
+                if x.size == y.size and x.convert('RGBA').tobytes() == y.convert('RGBA').tobytes():
+                    return 'same-pixels'
+                y.load()
+        except OSError:
+            return 'invalid-figure'
+    else:
+        # Parse every page with the same Poppler dependency as cached reproduction.
+        result = subprocess.run(['pdftotext', str(b), '-'], capture_output=True)
+        if result.returncode or b'Syntax Error' in result.stderr:
+            return 'invalid-figure'
+    return 'review-figure'
+
+
+def run(expected, rebuilt, strict_figures=False):
     expected, rebuilt = Path(expected), Path(rebuilt)
     files = lambda root: {p.relative_to(root).as_posix() for sub in ['data', 'figures'] for p in (root/sub).rglob('*')
                           if p.is_file() and p.name != '.DS_Store'}
     e, r = files(expected), files(rebuilt)
     if not e: raise ValueError(f'No data/ or figures/ files under {expected}')
-    counts, problems = {}, []
+    counts, problems, figure_review = {}, [], []
     for rel in sorted(e | r):
         s = 'missing' if rel not in r else 'extra' if rel not in e else _status(expected/rel, rebuilt/rel)
+        if s == 'differs' and rel.startswith('figures/') and Path(rel).suffix in {'.pdf', '.png'}:
+            s = _figure_status(expected/rel, rebuilt/rel)
+            if s == 'review-figure':
+                figure_review.append(rel)
         counts[s] = counts.get(s, 0) + 1
-        if s in ('differs', 'missing', 'extra', 'same-content'): problems.append((s, rel))
+        if s in ('differs', 'missing', 'extra', 'invalid-figure', 'same-content') or (strict_figures and s in ('review-figure', 'same-pixels')): problems.append((s, rel))
     differences = [f'{s}: {rel}' for s, rel in problems if s != 'same-content']
-    return dict(status='PASS' if not differences else 'FAIL', files=len(e | r), counts=counts, differences=differences,
+    return dict(status='PASS' if not differences else 'FAIL', figure_review=figure_review, files=len(e | r), counts=counts, differences=differences,
                 pdf_metadata_only=[rel for s, rel in problems if s == 'same-content'])

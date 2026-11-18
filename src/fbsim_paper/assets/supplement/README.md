@@ -25,13 +25,13 @@ Then, from this folder:
 export FBSIM_DATA_ROOT="$PWD/data"
 cp -R paper paper-rebuilt
 fbsim-paper build --paper-root paper-rebuilt     # about 6 minutes; no simulators or model calls
-fbsim-paper compare paper paper-rebuilt          # lists any differences; exits nonzero if there are any
+fbsim-paper compare paper paper-rebuilt          # checks data and lists changed figures for visual review
 ```
 
 `build` writes every generated file of the paper into `paper-rebuilt/`, from the inputs in `data/`. `paper/` holds
 the paper's own copies of those files (its `data/` and `figures/`; the LaTeX source is not included, and `main.tex`
 is a placeholder). `compare` checks them file by file: JSON files by value (numbers to 1e-12, ignoring `generated`
-dates), PDFs ignoring embedded creation dates and producer, and everything else byte for byte.
+dates), PDFs ignoring embedded creation dates and producer, and data tables and other files byte for byte. Missing, extra, unreadable changed images, and data differences fail the check. A PASS can include figures listed under `figure_review`: inspect those for changes to labels, values or plotted marks. Linux and macOS can render identical inputs differently. Use `--strict-figures` to also fail on encoding or rendering differences.
 
 ## Contents
 
