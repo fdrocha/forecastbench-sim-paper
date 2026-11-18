@@ -74,22 +74,42 @@ def main():
  q=s.add_parser('check-archive',help='Check that v1 files are unchanged and list files added since v1')
  q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
  q=s.add_parser('build',help='Regenerate the manuscript checkout\'s generated files in place')
- q.add_argument('steps',nargs='*',help='Any of micropolis, freeciv, starsim, combined (default: all, in that order)')
+ q.add_argument('steps',nargs='*',help='Any of micropolis, freeciv, starsim, combined, case-study (default: all, in that order)')
  q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
  q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
  q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
  q.add_argument('--include-micropolis-conditionals',action='store_true',help='Opt into the additional Micropolis studies and eleven-cell score; default preserves the nine-cell ICLR R&R')
  q=s.add_parser('case-study',help='Offline FreeCiv/measles calibration in a new private output directory')
- q.add_argument('--freeciv-root',type=Path,required=True)
- q.add_argument('--measles-root',type=Path,required=True,help='Historical timeseries folder containing data/')
- q.add_argument('--measles-roster',type=Path,required=True,help='Private JSON mapping model IDs to ECI scores')
+ q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'),help='Data archive; supplies any input path not given')
+ q.add_argument('--freeciv-root',type=Path)
+ q.add_argument('--measles-root',type=Path,help='Historical timeseries folder containing data/')
+ q.add_argument('--measles-roster',type=Path,help='Private JSON mapping model IDs to ECI scores')
  q.add_argument('--output',type=Path,required=True)
  q.add_argument('--freeciv-raw-repo',type=Path,help='Also audit parsing; Git checkout retaining archived FreeCiv calls')
  q.add_argument('--freeciv-raw-ref',default='daca5a15af759f4124960e30694bff15256b7f5d')
+ q=s.add_parser('supplement',help='Write the anonymized reviewer supplement (folder and zip) next to the data archive')
+ q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
+ q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
+ q.add_argument('--out',type=Path,help='New output folder (default: fbsim-supplementary-<manuscript commit> beside the archive)')
+ q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
+ q.add_argument('--max-mb',type=float,default=95,help='Fail if the zip is larger (default 95)')
+ q=s.add_parser('compare',help='Compare a rebuilt paper folder with the expected one (data/ and figures/)')
+ q.add_argument('expected',type=Path);q.add_argument('rebuilt',type=Path)
  a=p.parse_args()
+ if a.command=='compare':
+  from .compare import run
+  try:result=run(a.expected,a.rebuilt)
+  except ValueError as e:p.error(str(e))
+  print(json.dumps(result,indent=2))
+  if result['status']!='PASS':sys.exit(f"{len(result['differences'])} files differ")
+  return
  if a.command=='case-study':
-  from .case_study import run
-  try:result=run(a.freeciv_root,a.measles_root,a.measles_roster,a.output,a.freeciv_raw_repo,a.freeciv_raw_ref)
+  from .case_study import run,archive_inputs
+  paths=[a.freeciv_root,a.measles_root,a.measles_roster]
+  if None in paths:
+   if a.data_root is None:p.error('Pass --freeciv-root, --measles-root and --measles-roster, or --data-root DIR (or set FBSIM_DATA_ROOT) for the archive\'s copies.')
+   paths=[x if x is not None else d for x,d in zip(paths,archive_inputs(Path(a.data_root).expanduser()))]
+  try:result=run(*paths,a.output,a.freeciv_raw_repo,a.freeciv_raw_ref)
   except (ValueError,FileNotFoundError) as e:p.error(str(e))
   print(json.dumps(result,indent=2));return
  if a.command=='smoke':
@@ -101,6 +121,14 @@ def main():
    from .archive import check
    result=check(a.data_root.resolve().parent);print(json.dumps(result,indent=2))
    if result['missing'] or result['changed']:sys.exit(f"{len(result['missing'])} v1 files missing, {len(result['changed'])} changed")
+   return
+  if a.command=='supplement':
+   if a.paper_root is None:p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')
+   from .supplement import run
+   try:result=run(a.data_root.resolve(),Path(a.paper_root).expanduser().resolve(),a.out,a.allow_dirty,a.max_mb)
+   except ValueError as e:p.error(str(e))
+   print(json.dumps(result,indent=2))
+   if result['status']!='PASS':sys.exit(result['status'])
    return
   if a.command=='build':
    if a.paper_root is None:p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')

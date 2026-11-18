@@ -7,4 +7,4 @@ Data archive: each paper version has its own frozen version of the archive (v1 f
 - Files added since v1 are edited, overwritten or deleted in place as the paper changes; keep no interim versions and use no dated folder names. Change them only when asked, and report every deletion.
 - The archive's `CHANGES.md` describes how it differs from v1 now, not a history: update it whenever that difference changes. Hashes are recorded only when a version is frozen.
 - `fbsim-paper check-archive` checks the v1 files and lists what was added since v1; run it after changing the archive.
-- The archive is private, not a public or reviewer release; a public package needs its own review and must leave out `datasets/freeciv-candidates`.
+- The archive is private, not a public or reviewer release; a public package needs its own review. The reviewer supplement is made only with `fbsim-paper supplement`, which anonymizes it.

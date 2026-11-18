@@ -1,13 +1,13 @@
 """Regenerate the manuscript's generated files in place, from the data archive and this checkout's scripts."""
 from pathlib import Path
-import shutil, subprocess, sys, tempfile, time
+import json, shutil, subprocess, sys, tempfile, time
 from .cached import _env, commands
 from .runner import ASSETS, analysis_root
 from .experiments import CONDITIONALS_ENV
 
 # In dependency order: the combined step refits the combined score and writes the cross-world tables from the
 # other three steps' files.
-STEPS = ['micropolis', 'freeciv', 'starsim', 'combined']
+STEPS = ['micropolis', 'freeciv', 'starsim', 'combined', 'case-study']
 INPUTS = 'datasets/paper-inputs'
 FREECIV = 'datasets/freeciv-source/worlds/freeciv/fbsim_v3'
 FREECIV_RUN = 'run2_paper'
@@ -74,6 +74,18 @@ def _commands(step, data, paper, tmp, include_conditionals=False):
                             '--out', str(paper/'data/starsim/starsim_baselines.json')],
                            [py, str(ASSETS/'starsim'/'integrate_fixed_state.py'), '--paper-root', str(paper), '--analysis-root', str(analysis),
                             '--audit-root', str(audit), '--out', str(tmp/'generated')]]
+    if step == 'case-study':
+        # The full output (item-level arrays, receipts) stays in the temporary directory; only the plot's data and
+        # figure go to the manuscript.
+        def case_study():
+            from . import case_study as cs
+            out = tmp/'output'
+            cs.run(*cs.archive_inputs(data), out)
+            if json.loads((out/'run-status.json').read_text()).get('status') != 'PASS':
+                raise ValueError('case study did not pass')
+            for name, dst in cs.PAPER_FILES.items():
+                shutil.copyfile(out/name, paper/dst)
+        return _env(tmp), [case_study]
     C = ASSETS/'combined'
     # This diagnostic reconstructs the manuscript's nine cells and checks them
     # against the combined fit. It does not cover the additional studies.

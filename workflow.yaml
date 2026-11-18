@@ -84,12 +84,12 @@
     },
     {
       "id": "build",
-      "command": "fbsim-paper build [micropolis] [freeciv] [starsim] [combined]",
-      "inputs": "$FBSIM_DATA_ROOT/datasets/paper-inputs, cached Starsim/FreeCiv archive folders, this checkout's scripts",
+      "command": "fbsim-paper build [micropolis] [freeciv] [starsim] [combined] [case-study]",
+      "inputs": "$FBSIM_DATA_ROOT/datasets/paper-inputs, cached Starsim/FreeCiv/measles archive folders, this checkout's scripts",
       "outputs": "generated tables, figures, macros and data files in the manuscript checkout ($FBSIM_PAPER_ROOT)",
       "schema_version": "1",
       "access": "public code; restricted inputs required",
-      "runtime": "about 2 minutes for all steps; no engine runs",
+      "runtime": "about 3 minutes for all steps; no engine runs",
       "cost_usd": 0,
       "network": false,
       "side_effects": "overwrites generated files in the manuscript checkout (refused if it has uncommitted changes there, unless --allow-dirty); review with git there",
@@ -97,7 +97,7 @@
     },
     {
       "id": "case-study",
-      "command": "fbsim-paper case-study --freeciv-root \"$FREECIV_RETAINED_ROOT\" --measles-root \"$HISTORICAL_TIMESERIES_ROOT\" --measles-roster \"$HISTORICAL_MODEL_ROSTER\" --output \"$NEW_CALIBRATION_OUTPUT\"",
+      "command": "fbsim-paper case-study --data-root \"$FBSIM_DATA_ROOT\" --output \"$NEW_CALIBRATION_OUTPUT\" [--freeciv-root DIR] [--measles-root DIR] [--measles-roster FILE]",
       "inputs": "Retained FreeCiv forecasts/replays, historical measles scores/series and model roster; optional archived raw responses",
       "outputs": "Private diagnostics, source hashes, bootstrap/sensitivity tables and manuscript two-bar figure",
       "access": "Private inputs; not distributed",
@@ -105,6 +105,28 @@
       "production": false,
       "cost_usd": 0,
       "side_effects": "Creates a new private output directory only; no archive or manuscript changes"
+    },
+    {
+      "id": "supplement",
+      "command": "fbsim-paper supplement [--out NEW_DIR]",
+      "inputs": "$FBSIM_DATA_ROOT (incl. datasets/supplement-anonymization) and the committed manuscript checkout ($FBSIM_PAPER_ROOT)",
+      "outputs": "anonymized reviewer supplement folder and zip beside the archive",
+      "access": "Private inputs; output is for OpenReview upload by the authors",
+      "network": false,
+      "production": false,
+      "cost_usd": 0,
+      "side_effects": "Creates a new folder and zip only; never overwrites"
+    },
+    {
+      "id": "compare",
+      "command": "fbsim-paper compare EXPECTED_PAPER REBUILT_PAPER",
+      "inputs": "two paper folders (data/ and figures/)",
+      "outputs": "stdout JSON; nonzero exit on differences",
+      "access": "public code",
+      "network": false,
+      "production": false,
+      "cost_usd": 0,
+      "side_effects": "none"
     }
   ],
   "production_replay": "not exposed; separate explicit authorization, engine dependencies and private configs required"
