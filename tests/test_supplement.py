@@ -38,3 +38,16 @@ def test_anonymizer_replaces_text_and_gz_and_flags_leaks(tmp_path):
     assert a.edited == {'r.md': 2, 'r.jsonl.gz': 1}
     assert [s for _, s in a.leaks('n.txt', b'by Alice at /Users/bob/')] == ['Alice', '/Users/b']
     assert a.leaks('ok.txt', b'/Users/user/z') == []
+
+
+def test_changed_graphic_requires_visual_review_and_corrupt_graphic_fails(tmp_path):
+    from PIL import Image
+    a = _paper(tmp_path/'a', {'figures/p.png': b''})
+    b = _paper(tmp_path/'b', {'figures/p.png': b''})
+    Image.new('RGB', (3, 3), 'red').save(a/'figures/p.png')
+    Image.new('RGB', (3, 3), 'blue').save(b/'figures/p.png')
+    result = compare(a, b)
+    assert result['status'] == 'PASS' and result['figure_review'] == ['figures/p.png']
+    assert compare(a, b, strict_figures=True)['status'] == 'FAIL'
+    (b/'figures/p.png').write_bytes(b'broken')
+    assert compare(a, b)['differences'] == ['invalid-figure: figures/p.png']
