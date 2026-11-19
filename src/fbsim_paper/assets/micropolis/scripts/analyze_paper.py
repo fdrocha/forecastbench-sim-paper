@@ -157,7 +157,6 @@ from gather_paper_data import (
     KNOWLEDGE_RUNS_CSV_NAME,
     MODEL_SCORES_CSV_NAME,
     OUT_DIR,
-    RECHECK_CSV_NAME,
     REPLAYS_ARCHIVE_NAME,
     SCALES_CSV_NAME,
     TAIL_MAX,
@@ -2309,26 +2308,6 @@ def read_batching_runs(path: Path) -> list[dict]:
     return rows
 
 
-def read_recheck(path: Path) -> list[dict] | None:
-    """gpt5_check_forecasts.csv, or None when the rerun has not been gathered.
-
-    Unparsed forecasts are rows with an empty forecast here, unlike every
-    other forecast file: the count of them is the point.
-    """
-    if not path.exists():
-        return None
-    with path.open(newline="") as f:
-        rows = []
-        for r in csv.DictReader(f):
-            r["forecast"] = float(r["forecast"]) if r["forecast"] != "" else None
-            r["real_prob"] = float(r["real_prob"])
-            r["has_block"] = int(r["has_block"])
-            r["model_id"] = r.pop("model")
-            rows.append(r)
-    assign_sets(rows, path)
-    return rows
-
-
 def batching_settings(rows: list[dict]) -> list[dict]:
     """The ablation's settings, smallest prompt first.
 
@@ -2807,7 +2786,6 @@ def batching_lines(
     rho: dict[str, dict[int, object]],
     rho_cities: dict[str, dict[int, tuple | None]],
     production: dict | None,
-    recheck: list[dict] | None,
 ) -> list[str]:
     r"""\MPDBatch* : every number the questions-per-prompt appendix quotes.
 
@@ -3176,81 +3154,6 @@ def batching_lines(
             f"{min(adjusted(c.rho) for c in rho_rest.values() if c):.2f}",
         ),
     ]
-    # The rerun in its own data directory, when gathered.
-    if recheck:
-        mine = [r for r in recheck if r["model_id"] == anchor]
-        parsed = [r for r in mine if r["forecast"] is not None]
-        stop = sum(1 for r in mine if r["finish_reason"] == "stop")
-        noblock = [r for r in mine if not r["has_block"]]
-        old = {r["question_id"]: r["forecast"] for r in one if r["model_id"] == anchor}
-        pairs = [
-            (old[r["question_id"]], r["forecast"])
-            for r in parsed
-            if r["question_id"] in old
-        ]
-        old65 = [(a, b) for a, b in pairs if abs(a - ex) < 1e-9]
-        tail = [r for r in parsed if r["section"] == TAIL]
-        mid = [r for r in parsed if r["section"] == MID_RANGE]
-        import math
-
-        def bits(f, p):
-            f = min(max(f, 0.001), 0.999)
-            v = 0.0
-            if p > 0:
-                v += p * math.log2(p / f)
-            if p < 1:
-                v += (1 - p) * math.log2((1 - p) / (1 - f))
-            return v
-
-        lines += [
-            "% The GPT-5 mini rerun at the smallest prompt, in its own data directory.",
-            nc("RecheckN", f"{len(mine):,}"),
-            nc("RecheckUnparsed", len(mine) - len(parsed)),
-            nc(
-                "RecheckStopShare", f"{100.0 * stop / len(mine):.1f}" if mine else "---"
-            ),
-            nc("RecheckNoBlock", len(noblock)),
-            nc(
-                "RecheckNoBlockStop",
-                sum(1 for r in noblock if r["finish_reason"] == "stop"),
-            ),
-            nc(
-                "RecheckExampleShare",
-                f"{100.0 * sum(1 for r in parsed if abs(r['forecast'] - ex) < 1e-9) / len(parsed):.1f}"
-                if parsed
-                else "---",
-            ),
-            nc(
-                "RecheckTail",
-                f"{sum(bits(r['forecast'], r['real_prob']) for r in tail) / len(tail):.3f}"
-                if tail
-                else "---",
-            ),
-            nc(
-                "RecheckMid",
-                f"{sum((r['forecast'] - r['real_prob']) ** 2 for r in mid) / len(mid):.3f}"
-                if mid
-                else "---",
-            ),
-            nc(
-                "RecheckMeanAbsDelta",
-                f"{sum(abs(a - b) for a, b in pairs) / len(pairs):.3f}"
-                if pairs
-                else "---",
-            ),
-            nc(
-                "RecheckIdenticalShare",
-                f"{100.0 * sum(1 for a, b in pairs if abs(a - b) < 1e-9) / len(pairs):.0f}"
-                if pairs
-                else "---",
-            ),
-            nc(
-                "RecheckExampleAgainShare",
-                f"{100.0 * sum(1 for a, b in old65 if abs(b - ex) < 1e-9) / len(old65):.0f}"
-                if old65
-                else "---",
-            ),
-        ]
     return lines
 
 
@@ -4560,7 +4463,6 @@ def main() -> None:
     )
     knowledge = read_knowledge(args.datadir / KNOWLEDGE_CSV_NAME)
     knowledge_runs = read_knowledge_runs(args.datadir / KNOWLEDGE_RUNS_CSV_NAME)
-    recheck = read_recheck(args.datadir / RECHECK_CSV_NAME)
 
     extra_dir = args.outdir / EXTRA_SUBDIR
     print("=" * 70)
@@ -4665,8 +4567,6 @@ def main() -> None:
             f" ({b_t['delta']:+.3f}, CI models"
             f" {format_band((b_tm['dlo'], b_tm['dhi']), 0)})"
         )
-    if recheck is None:
-        print(f"  [note] {RECHECK_CSV_NAME} absent; rerun macros not defined")
     print()
     batch_macros = batching_lines(
         batching,
@@ -4680,7 +4580,6 @@ def main() -> None:
         rho,
         rho_cities,
         production,
-        recheck,
     )
     # The prompt variants: scored like the main run, compared paired on the
     # panel against each one's parent.

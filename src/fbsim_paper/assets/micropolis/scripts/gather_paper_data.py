@@ -38,11 +38,6 @@ actually computed at, not a per-model mean:
   model's parsed answer, and per model what its calls cost.
 - continuous_replays.tar.gz: the ground-truth file of each of the continuous
   config's snapshots, as extract_ground_truth.py wrote it, in one archive.
-- gpt5_check_forecasts.csv: the one-question-per-prompt rerun of GPT-5 mini in
-  its own data directory (configs/gpt5-check-1q.json5), with each response's
-  finish reason, for the appendix's account of that model's failures. Read by
-  path from that directory, since a process works in one data directory and
-  this one is the paper's.
 
 Model names are written as model *ids*: this world's ":suffix" (":loeff", the
 reasoning effort a run was gathered under) is dropped, since the paper reports
@@ -72,9 +67,7 @@ Usage:
 """
 
 import argparse
-import csv
 import gzip
-import json
 import shutil
 import sys
 import tarfile
@@ -268,29 +261,6 @@ BATCHING_RUNS_COLUMNS = [
     "latency_ms_sum",
     "latency_ms_p50",
 ]
-
-# The GPT-5 mini rerun at one question per prompt. It lives in its own data
-# directory (the config's data_dir) precisely so its prompts missed the main
-# cache, and a process works in one data directory, so it is read by path
-# from analyze_binary.py's results.csv there rather than through Config.
-# Unparsed forecasts are KEPT here, as empty cells, because the count of them
-# is one of the things the appendix reports about this run.
-RECHECK_DIR_NAME = "micropolis_gpt5_check"
-RECHECK_LABEL = "1q"
-RECHECK_CSV_NAME = "gpt5_check_forecasts.csv"
-RECHECK_COLUMNS = [
-    "model",
-    "question_id",
-    "qid",
-    "section",
-    "horizon",
-    "forecast",
-    "real_prob",
-    "finish_reason",
-    "output_tokens",
-    "has_block",
-]
-ANSWER_BLOCK_MARKER = "<<<PROBABILITIES>>>"
 
 # The prompt variants of appendix D: one continuous config per variant under
 # configs/prompt variants/, each the main run's settings but for the lever it
@@ -1027,62 +997,6 @@ def write_replays_archive(cfg: Config, path: Path) -> Path:
     return path
 
 
-def recheck_rows(dirname: str) -> list[dict]:
-    """The GPT-5 mini rerun's forecasts, with each response's finish reason.
-
-    Empty when the rerun has not been scored yet, with a note saying how; the
-    paper's other data does not depend on it.
-    """
-    root = g.DATA_ROOT / dirname
-    results = root / "binary" / RECHECK_LABEL / "results.csv"
-    if not results.exists():
-        warn(
-            f"{results} not found; {RECHECK_CSV_NAME} not written. Run"
-            " scripts/run_eval_binary.py, extract_ground_truth.py and"
-            " analyze_binary.py on configs/gpt5-check-1q.json5 to produce it."
-        )
-        return []
-    cache = root / "binary" / "cache"
-    rows = []
-    with results.open(newline="") as f:
-        for r in csv.DictReader(f):
-            response = cache / r["response_file"]
-            sidecar = response.parent / (
-                "usage-"
-                + response.name[len("response-") :].removesuffix(".txt")
-                + ".json"
-            )
-            meta = json.loads(sidecar.read_text()) if sidecar.exists() else {}
-            text = response.read_text() if response.exists() else ""
-            p = float(r["real_prob"])
-            disasters = (
-                "disasters"
-                if r["disasters"] in ("1", "True", "true")
-                else "nodisasters"
-            )
-            rows.append(
-                {
-                    "model": to_model_id(r["model"]),
-                    "question_id": (
-                        f"{r['city']}_{disasters}_seed{r['seed']}_T{r['snapshot_turn']}"
-                        f"_H{r['horizon']}_{r['question_id']}"
-                    ),
-                    "qid": r["question_id"],
-                    "section": question_set(p),
-                    "horizon": years(int(r["horizon"])),
-                    "forecast": "" if r["forecast"] in ("", "nan") else r["forecast"],
-                    "real_prob": r["real_prob"],
-                    "finish_reason": meta.get("finish_reason", ""),
-                    "output_tokens": meta.get("output_tokens", ""),
-                    "has_block": int(ANSWER_BLOCK_MARKER in text),
-                }
-            )
-    unparsed = sum(1 for r in rows if r["forecast"] == "")
-    print(f"recheck:    {results}")
-    print(f"            {len(rows)} forecasts, {unparsed} unparsed")
-    return rows
-
-
 def scale_rows(cfg: Config) -> list[dict]:
     """One row per city: its metric means up to the first snapshot, floored."""
     seed = cfg.get_seed(None)
@@ -1174,12 +1088,6 @@ def main() -> None:
         default=KNOWLEDGE_CONFIG_PATH,
         help=f"JSON5 config of the knowledge test (default: {KNOWLEDGE_CONFIG_PATH})",
     )
-    ap.add_argument(
-        "--recheck-dir",
-        default=RECHECK_DIR_NAME,
-        help="the data directory the GPT-5 mini rerun was made in "
-        f"(default: {RECHECK_DIR_NAME})",
-    )
     args = ap.parse_args()
     if not args.batching_configs:
         sys.exit(f"[error] no batching configs match configs/{BATCHING_CONFIG_GLOB}")
@@ -1208,7 +1116,6 @@ def main() -> None:
         args.variants_configs, continuous_cfg
     )
     knowledge, knowledge_runs = knowledge_rows(load_config_at(args.knowledge_config))
-    recheck = recheck_rows(args.recheck_dir)
 
     print()
     for name, columns, rows in [
@@ -1229,7 +1136,6 @@ def main() -> None:
         (VARIANTS_SETTINGS_CSV_NAME, VARIANTS_SETTINGS_COLUMNS, variants_settings),
         (KNOWLEDGE_CSV_NAME, KNOWLEDGE_COLUMNS, knowledge),
         (KNOWLEDGE_RUNS_CSV_NAME, KNOWLEDGE_RUNS_COLUMNS, knowledge_runs),
-        *([(RECHECK_CSV_NAME, RECHECK_COLUMNS, recheck)] if recheck else []),
     ]:
         print(f"Wrote {write_csv(out / name, columns, rows)}")
 
