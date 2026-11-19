@@ -4,7 +4,7 @@
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")" && pwd)
 VENV="$REPO/.venv"
-B=git+https://github.com/forecastingresearch/forecastbench-sim@9e016b76f14f98c496da513c5c8aca1c2db535cd
+B=git+https://github.com/forecastingresearch/forecastbench-sim@bef1775e7eaea6a5d5f3c41c829eb7cee55a0d9f
 # FBSIM_BENCHMARK_DIR: install the benchmark from a local copy instead (e.g. a downloaded anonymized mirror).
 if [[ -n "${FBSIM_BENCHMARK_DIR:-}" ]]; then
   PKGS=("$FBSIM_BENCHMARK_DIR/packages/fbsim-core" "$FBSIM_BENCHMARK_DIR/packages/fbsim-benchmark")

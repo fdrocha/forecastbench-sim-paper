@@ -6,7 +6,7 @@ SciPy 1.16.3 replaced 1.15.3 on October 15, 2026: on macOS 27 the 1.15.3 arm64 w
 
 The existing reviewed scientific wheelhouse contains the exact hashes in requirements-verified-macos-arm64-py313.txt. It is not distributed here. Canonical core also needs litellm, python-dotenv and their transitive dependencies: these must already be in the local uv cache for the offline route. The scientific wheelhouse alone is insufficient. Offline mode fails rather than downloading missing packages.
 
-Given an existing interpreter, the reviewed wheelhouse, the cached core dependencies and benchmark source checked out at 9e016b76f14f98c496da513c5c8aca1c2db535cd:
+Given an existing interpreter, the reviewed wheelhouse, the cached core dependencies and benchmark source checked out at bef1775e7eaea6a5d5f3c41c829eb7cee55a0d9f:
 
 ```sh
 uv venv --offline --python "$BASE_PYTHON" "$VENV"

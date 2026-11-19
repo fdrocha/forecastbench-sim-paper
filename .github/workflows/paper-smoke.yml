@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: forecastingresearch/forecastbench-sim
-          ref: 9e016b76f14f98c496da513c5c8aca1c2db535cd
+          ref: bef1775e7eaea6a5d5f3c41c829eb7cee55a0d9f
           path: benchmark-source
       - uses: astral-sh/setup-uv@v6
       - run: uv python install ${{ matrix.python }}
