@@ -1,8 +1,8 @@
 # ForecastBench-Sim paper analysis
 
-Cached analysis, aggregation, uncertainty summaries and plotting for ForecastBench-Sim. The cached routes check the scientific inputs and outputs of the **f214afe3 frozen analysis baseline**; the reporting code itself follows the current manuscript, whose generated files `fbsim-paper build` writes. See [manuscript mapping](docs/MANUSCRIPT_STATUS.md).
+Analysis, aggregation, uncertainty summaries and plotting for the ForecastBench-Sim paper. `fbsim-paper build` regenerates every generated table, figure and macro of the manuscript from the paper's data folder.
 
-This repository is the home for the paper's analysis, including the combined-score, rank-table and Starsim scripts that used to live in the manuscript repository. Changes to paper analysis land here as pull requests. The cached routes check the f214afe3 baseline until new inputs are frozen into the data archive.
+This repository is the home for the paper's analysis, including the combined-score, rank-table and Starsim scripts that used to live in the manuscript repository. Changes to paper analysis land here as pull requests.
 
 ## What goes where
 
@@ -12,8 +12,8 @@ This repository is the home for the paper's analysis, including the combined-sco
 | Paper analysis: selection, normalization, aggregation, tables, figures | this repository, `src/` |
 | How the paper's inputs were produced: production configs, seeds, prompts, model panels, producer scripts | this repository, [`production/`](production/README.md) |
 | Manuscript text and the generated files it reads | the manuscript repository (Overleaf); `fbsim-paper build` writes the generated files |
-| Inputs of the manuscript build: Micropolis's gathered forecasts, the model-name list, Starsim's pre-repair scores | private data archive: `datasets/paper-inputs`, frozen with the archive version of each paper version |
-| Raw provider responses, simulator outputs, datasets, human-subject records, credentials | private data archive, never Git |
+| Questions, truths, model responses, scored forecasts and every input of `fbsim-paper` | the paper's data folder (published with the paper; see "Data" below), never Git |
+| Human-subject records, credentials | neither Git nor the published data |
 
 ## Install
 
@@ -22,10 +22,10 @@ Python 3.11+ is declared; the tested platform is CPython 3.13 / macOS arm64, and
 ```sh
 ./install.sh      # creates .venv (or updates it) and runs fbsim-paper smoke
 source .venv/bin/activate
-pytest -q tests   # optional; needs no data archive
+pytest -q tests   # optional; needs no data folder
 ```
 
-This repository is installed in editable mode, so commands run its scripts as checked out. After `source .venv/bin/activate` the `fbsim-paper` command is on the path (`python -m fbsim_paper` works too). `build_paper.sh` (see below) uses its own environment, `.venv-build`, with your forecastbench-sim checkout instead of the pinned benchmark. These commands need package-index access; for the verified non-editable wheel route and the offline wheelhouse route, see [environment](docs/ENVIRONMENT.md).
+This repository is installed in editable mode, so commands run its scripts as checked out. After `source .venv/bin/activate` the `fbsim-paper` command is on the path (`python -m fbsim_paper` works too). `build_paper_dev.sh` (see below) uses its own environment, `.venv-build`, with your forecastbench-sim checkout instead of the pinned benchmark. These commands need package-index access; for the verified non-editable wheel route and the offline wheelhouse route, see [environment](docs/ENVIRONMENT.md).
 
 ## Settings
 
@@ -33,9 +33,9 @@ Copy `.env.example` to `.env` (not committed) and set the paths in it. `fbsim-pa
 
 | Variable | What it is | Flag |
 |---|---|---|
-| `FBSIM_DATA_ROOT` | the data archive's `data/` folder (holding `datasets/` and `manifests/`) | `--data-root` |
+| `FBSIM_DATA_ROOT` | the data folder (holding `datasets/` and `SHA256SUMS.txt`) | `--data-root` |
 | `FBSIM_PAPER_ROOT` | the manuscript checkout (the folder with `main.tex`), for `build` | `--paper-root` |
-| `FBSIM_REPO_ROOT` | the forecastbench-sim checkout, for `build_paper.sh` | none |
+| `FBSIM_REPO_ROOT` | the forecastbench-sim checkout, for `build_paper_dev.sh` | none |
 
 ## Working on the paper
 
@@ -47,68 +47,69 @@ fbsim-paper build micropolis combined  # only these steps (always run in that or
 fbsim-paper build micropolis combined --include-micropolis-conditionals  # optional eleven-cell experiments
 ```
 
-The default preserves the ICLR R&R nine-cell instrument even if additional Micropolis conditional files are present. The explicit flag runs those studies and includes their scores and plots. For standalone asset scripts, set `FBSIM_INCLUDE_MICROPOLIS_CONDITIONALS=1` to opt in; otherwise they retain nine cells. These extra studies are not part of the current R&R.
+The default preserves the ICLR R&R nine-cell instrument even if additional Micropolis conditional files are present. The explicit flag runs those studies and includes their scores and plots. For standalone asset scripts, set `FBSIM_INCLUDE_MICROPOLIS_CONDITIONALS=1` to opt in; otherwise they retain nine cells. These extra studies are not part of the ICLR R&R version. The held-out-world diagnostic (`generalization.py`) covers only the nine cells, so the eleven-cell build skips it; its existing files still describe the nine-cell instrument.
 
 1. It refuses to run if the manuscript has uncommitted changes under `data/` or `figures/`, which it would overwrite; `--allow-dirty` overrides.
-2. It copies each file of `$FBSIM_DATA_ROOT/datasets/paper-inputs` to the same path under the manuscript's `data/`, where the content differs. That folder is the working copy of the build's own inputs (the others are versioned archive folders, read in place); the manuscript keeps copies, so edit them in the archive, not in the manuscript.
+2. It copies each file of `$FBSIM_DATA_ROOT/datasets/paper-inputs` to the same path under the manuscript's `data/`, where the content differs. The other data folders are read in place; the manuscript keeps copies of `paper-inputs`, so edit them in the data folder, not in the manuscript. It warns if the installed scorers differ from the benchmark pin.
 3. It runs each step's scripts against the manuscript checkout, writing over the files they generate. Every table is written whole; nothing reads or edits a `.tex` file.
    - Micropolis: `analyze_paper.py`, from the gathered CSVs in `paper-inputs/micropolis`: macros, appendix tables, figures and the CSVs in `data/micropolis/`; `micropolis_baselines.py`, run first, scores the baselines (`data/micropolis/micropolis_baselines.json`), which the capability figure and the per-model table draw. `micropolis_natcond.py`, run next, before `analyze_paper.py`, scores the natural conditionals from `micropolis-natcond` (draw and model answers), with the binary base rates for the independence baseline: `fig_micropolis_natcond.pdf`, `micropolis_natcond_blocks.tex`, `micropolis_natcond_macros.tex` and, in `data/micropolis/`, the per-model scores and a summary. Each model is scored on the cells it answered at both turns, and every output reports the coverage. `micropolis_intcond.py`, run after it, scores the interventional conditionals from `micropolis-intcond` the same way, against P(A | do X): `fig_micropolis_intcond.pdf`, `micropolis_intcond_blocks.tex`, `micropolis_intcond_macros.tex` and, in `data/micropolis/`, the per-model scores and a summary. `analyze_paper.py` draws both summaries' turn-2 excess Brier in the capability figure's second row, and the combined step adds them to the validation tables, the combined score and the rank tables.
    - FreeCiv: from the archived run (`freeciv-source`, run `run2_paper`): the backing files of `data/freeciv/`, the appendix tables, the per-forecast files, the comparison with one question per prompt (`make_freeciv_grouping.py`), the reasoning-effort check, the validation statistics, the figures and the prose macros (`make_freeciv_macros.py`). `selection_weights.py` turns Jaeho Lee's selection fractions (`freeciv-source-deliveries`) into selection weights for the mid-range questions (`data/freeciv/freeciv_selection_weights.csv`), with which `make_freeciv_macros.py` writes the Appendix C comparison with equal weights. `make_freeciv_baselines.py`, run first, scores the baselines from the generator's candidate questions (`freeciv-candidates`, exported once from the generator's pickles by `export_candidates.py`) and the turn-60 reports. The candidates hold the truth of questions that were never asked; they are released with the paper, so future draws should use new candidate banks.
    - Starsim: `integrate_fixed_state.py`, from the cached calls and the fixed-state audit (`analysis-original`, `starsim-audit`): Starsim's scores, appendix tables and figures; `starsim_baselines.py`, run first from the audit's outputs, scores the baselines and the SIR forecast (`data/starsim/starsim_baselines.json`), which its figure and table draw.
    - Combined: from the other three steps' files in the manuscript's `data/`, `refit_combined.py` refits the combined score (with its figure, the rank tables, the fixed-state uncertainty table and the Appendix C sensitivity macros), `simulator_scores.py` fits the same score per simulator and writes their correlation table, `generalization.py` refits it on disjoint halves of the worlds and with each simulator held out (Appendix C's held-out worlds and simulators table; it also reads FreeCiv's per-item scores from `freeciv-source`), `external_benchmarks.py` writes the Appendix E.2 table and macros for FutureEval, Prophet Arena and ForecastBench from `model_scores.csv`; `make_roster_table.py` and `make_validation_tables.py` write the roster and the two validation tables (the ForecastBench one with the partial correlations given ECI from `partial_correlations.py`), and `make_baseline_table.py` writes the baselines' prose macros and the appendix tables of binary and continuous alternatives. Rerun it after changing any world. `external_correlations.py` is an earlier diagnostic using `external_scores.csv`; the manuscript table is generated by `external_benchmarks.py`.
-   - Case study: runs `fbsim-paper case-study` on the archive's inputs (`freeciv-source`, `measles-case-study`) in a temporary directory and, if it passes, copies only `data/calibration_case_study.csv` and `figures/calibration_case_study.pdf` to the manuscript. Its other outputs are private and discarded; run `case-study` itself to keep them.
+   - Case study: runs `fbsim-paper case-study` on the archive's inputs (`freeciv-source`, `measles-case-study`) in a temporary directory and, if it passes, copies only `data/calibration_case_study.csv` and `figures/calibration_case_study.pdf` to the manuscript. Its other outputs are discarded; run `case-study` itself to keep them.
 4. It prints `git status` of the manuscript's `data/` and `figures/`. Review the diff there and commit both repositories.
 
-To use your forecastbench-sim checkout instead of the pinned benchmark, run `./build_paper.sh [steps]`, which takes the same arguments as `build`. It installs `fbsim-core` and `fbsim-benchmark` from `FBSIM_REPO_ROOT`, and this repository, as editable packages into `.venv-build`, then runs `fbsim-paper build`. `.venv-build` is separate from `.venv`, which keeps the pinned benchmark that `validate` and `reproduce` check. Reinstalling takes under a second when nothing changed. Use the script, or `uv pip`, rather than `uv sync` or `uv run`: those resolve the pinned benchmark packages from the package index, where they are not published.
+The normal build runs in `.venv`, which `install.sh` makes with the benchmark pinned to a forecastbench-sim commit (`install.sh`, `src/fbsim_paper/assets/benchmark-pin.json`). To see the effect of a scorer change in your forecastbench-sim checkout before moving the pin, run `./build_paper_dev.sh [steps]`, which takes the same arguments as `build`. It installs `fbsim-core` and `fbsim-benchmark` from `FBSIM_REPO_ROOT`, and this repository, as editable packages into `.venv-build`, then runs `fbsim-paper build`; the build warns that it is not pinned when the scorers differ. Reinstalling takes under a second when nothing changed. Use the script, or `uv pip`, rather than `uv sync` or `uv run`: those resolve the pinned benchmark packages from the package index, where they are not published.
 
-There are no hash checks and no snapshot copy, so `build` works while code and inputs change; `validate` and `reproduce` are for frozen releases. Figures get a fixed PDF date (`SOURCE_DATE_EPOCH=0` unless set), so an unchanged figure leaves no diff. A full build takes about 3 minutes. Hand-written files are not generated: `openrouter_ids_table.tex`, `human_pilot_table.tex` and the schematic. Generated files carry no review markup: when a generated table or figure changes visibly, note it in its caption in the manuscript with `\changenote`.
+`build` does not check input hashes, so it works while code and inputs change; `check-data` does (see "Data"). Figures get a fixed PDF date (`SOURCE_DATE_EPOCH=0` unless set), so an unchanged figure leaves no diff. A full build takes about 7 minutes. Hand-written files are not generated: `openrouter_ids_table.tex`, `human_pilot_table.tex` and the schematic. Generated files carry no review markup: when a generated table or figure changes visibly, note it in its caption in the manuscript with `\changenote`.
 
 ## Historical forecasting case study
 
 `fbsim-paper case-study` reproduces the FreeCiv/measles upper-quantile comparison
-from retained private forecasts, including bootstrap intervals, matched domain-label
-sensitivity and the manuscript chart. It writes to a new private directory, with
-networking disabled; input paths not given default to the archive's copies under `--data-root`.
+from the retained forecasts, including bootstrap intervals, matched domain-label
+sensitivity and the manuscript chart. It writes to a new directory, with
+networking disabled; input paths not given default to the data folder's copies under `--data-root`.
+`--parser-audit` also re-parses the raw FreeCiv and measles replies and checks them against the saved forecasts.
 `build case-study` delivers only the chart's CSV and PDF to the manuscript. See [inputs, commands and limitations](docs/CALIBRATION_CASE_STUDY.md).
 
 ## Supplement for reviewers
 
-`fbsim-paper supplement` writes the anonymized data supplement for OpenReview, as a folder and a zip named after the manuscript commit, beside the data archive (`--out` to choose; it never overwrites). It holds every archive input that `build` reads, the further items Appendix F describes, and a snapshot of the manuscript's generated `data/` and `figures/` (no LaTeX source). It applies the replacements in the archive's `datasets/supplement-anonymization/`, fails if a blocklisted string remains or the zip exceeds 95 MB (`--max-mb`), and refuses a manuscript with uncommitted generated files (`--allow-dirty`). Build the manuscript and commit its output first, so the snapshot matches a rebuild.
+`fbsim-paper supplement` writes the anonymized data supplement for OpenReview, as a folder and a zip named after the manuscript commit, beside the data archive (`--out` to choose; it never overwrites). It holds every data-folder input that `build` reads (without the model replies), the further items Appendix F describes, and a snapshot of the manuscript's generated `data/` and `figures/` (no LaTeX source). It applies the replacements in the anonymization folder (`--anonymization`; by default `private-data/datasets/supplement-anonymization` beside the data folder, which is not published), fails if a blocklisted string remains or the zip exceeds 95 MB (`--max-mb`), and refuses a manuscript with uncommitted generated files (`--allow-dirty`). Build the manuscript and commit its output first, so the snapshot matches a rebuild.
 
 Reviewers rebuild into a copy of the snapshot and check it with `fbsim-paper compare paper paper-rebuilt` (JSON by value to 1e-12, ignoring `generated` dates; PDFs without embedded metadata; data tables byte for byte; changed graphics listed for visual review under `figure_review`). A PASS can include graphics requiring inspection (use `--strict-figures` to fail on rendering or encoding changes). The anonymized code mirror rewrites the benchmark's GitHub URL, so they install it from the downloaded anonymized benchmark repository: `FBSIM_BENCHMARK_DIR=<its folder> ./install.sh`.
 
-## Releasing a paper version (planned)
+## Data
 
-For the current R&R configuration and remaining input dependencies, see
-[R&R reproduction status](docs/RR_RELEASE_STATUS.md).
-
-Not implemented yet; this is the agreed plan. When a version of the paper is released:
-
-1. Commit and push the manuscript after a `fbsim-paper build` that leaves nothing to commit.
-2. In the data archive, add the manuscript commit as `datasets/paper-<commit>` and a manifest under `manifests/` with the SHA-256 of every file the build reads and of the frozen manuscript, and bring `CHANGES.md` up to date (it describes the archive's difference from v1).
-3. Point `validate` and the reproduce commands at that manifest: they then build from the frozen inputs into a disposable copy of the frozen manuscript and compare every generated file with it. Until this happens, they target the f214afe3 release (see below).
-4. Cut and store the new version of the archive bundle; it is frozen from then on.
-
-The working archive stays editable for the next version, under the rules in `AGENTS.md`.
-
-## Cached reproduction requires restricted external inputs
-
-**The data and manifests are not distributed here, so a public clone cannot run these routes.** To regenerate the inputs from scratch, see [production/](production/README.md). Local availability does not grant redistribution rights. No download or data-release promise is made. With authorized access to the existing versioned private data home:
+The data folder holds everything the commands read, everything in the reviewer supplement, and every stored model
+response. It is released under CC BY 4.0 (its `LICENSE`); its `README.md` describes each dataset and the notice for
+model responses, and its `licenses/` holds the simulators' and data sources' licenses.
+`SHA256SUMS.txt` at its top lists every other file:
 
 ```sh
-fbsim-paper validate
-fbsim-paper reproduce --output "$NEW_STARSIM_OUTPUT"
-fbsim-paper reproduce-freeciv --output "$NEW_FREECIV_OUTPUT"
-fbsim-paper reproduce-micropolis --output "$NEW_MICROPOLIS_OUTPUT"
-fbsim-paper check-archive   # v1 files unchanged; lists the files added since v1
+fbsim-paper check-data           # missing, changed and added files, and scorers that differ from the pin; exits nonzero on any
+fbsim-paper check-data --write   # rewrite SHA256SUMS.txt after a deliberate change to the data
 ```
 
-Each command takes `--data-root` or `FBSIM_DATA_ROOT` (see Settings). Each output directory must be new. Validation checks 487 frozen inputs and scorer hashes. Missing inputs fail explicitly. Routes read cached inputs and create disposable outputs; they do not rerun simulators, call models or edit the manuscript. Python network access is guarded. Archival helper scripts are not production entrypoints.
+The commands read cached inputs only: they do not rerun simulators, call models or download anything. To regenerate
+the inputs from scratch, see [production/](production/README.md).
 
-Starsim uses retained forecasts with repaired continuous truth; historical binary results remain appendix-only and excluded from the nine-cell combined score. FreeCiv consumes cached per-item/aggregate results; Micropolis consumes frozen gathered CSVs. `verification.json` distinguishes byte equality, PDF-text equality, numerical roundoff and layout differences. The known FreeCiv capability-figure annotation presence/placement mismatch remains; JSON roundoff is at most 4.22e-15 in the verified run. Do not replace frozen artifacts merely because a route succeeds.
+Every model response behind the paper's results is in the data folder, except:
 
-**`reproduce` is expected to fail until the next paper release.** The scripts here now follow the manuscript (they match it at 2e57585, including its sign correction, rho(ECI, -loss)), while the cached routes still compare against the f214afe3 release. `reproduce` runs all 13 checks, records them in `verification.json` and exits nonzero if any fail: 4 do, the PNGs and PDF text of `fig_starsim_unconditional` and `fig_starsim_interventional`, whose annotations changed. Every data file it checks still matches f214afe3, and its Starsim and combined figures match the manuscript at 2e57585. `reproduce-freeciv` and `reproduce-micropolis` never fail on differences, but their comparisons drift the same way as their scripts change. All three are re-baselined when the next paper version is released (see "Releasing a paper version"). Until then, check out commit `7a00369` (the SciPy pin, the last commit where it passes) to rerun the passing f214afe3 verification.
+- **Micropolis batching ablation:** six of Llama 4 Scout's replies are missing. In the 50-question setting, the
+  replies behind 300 of its 1,000 forecasts were overwritten after scoring by a later run that shared their prompts;
+  the forecasts are in the scored results.
+- **Micropolis natural conditionals:** three turn-2 prompts of DeepSeek V4 Flash returned empty replies twice.
+- **FreeCiv:** some replies are empty because the model ran to its output limit (Kimi K2 26 and DeepSeek V4 Flash
+  26 to 27 in run 1, and 10 in DeepSeek V4 Flash's rerun).
+- **Starsim:** 139 of the 5,184 planned calls failed without a reply (Kimi K2 has 182 of 216, DeepSeek V4 Flash 111).
 
-See [limitations](docs/MIGRATION_GAPS.md), [boundaries](docs/BOUNDARIES.md), [attribution](docs/ATTRIBUTION.md), and the historical [results map](docs/results-map.yaml). Original histories and private data remain preserved separately.
+## Releasing a paper version
+
+1. Run `fbsim-paper build` until it leaves nothing to commit, then commit and push the manuscript.
+2. Bring the data folder up to date (its `README.md` too), run `fbsim-paper check-data --write`, and check that a
+   build from it into a clean manuscript checkout passes `fbsim-paper compare` against the committed manuscript.
+3. Tag this repository and publish the data folder; from then on that published copy is the version's data.
+
+See [boundaries and limitations](docs/BOUNDARIES.md) and [attribution](docs/ATTRIBUTION.md).
 
 See [historical production provenance](docs/PRODUCTION_PROVENANCE.md) for the bounded issue #6 audit: the pinned public runner is not the original paper producer, which is recorded in [production/](production/README.md). No numerical paper correction is indicated for those two specific defects; this does not establish general scientific correctness.

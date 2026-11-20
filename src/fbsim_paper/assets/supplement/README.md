@@ -57,8 +57,8 @@ dates), PDFs ignoring embedded creation dates and producer, and data tables and 
 
 ## Not included
 
-The paper's LaTeX source, the other raw model responses (all raw responses used in the analyses will be posted
-before publication, as Appendix F states), the 92 GB of FreeCiv saved games, internal working files and diagnostic
+The paper's LaTeX source, the other raw model responses (all raw responses used in the analyses are in the published
+data release; see Appendix F), the 92 GB of FreeCiv saved games, internal working files and diagnostic
 plot images.
 
 ## Anonymization

@@ -28,10 +28,10 @@ def test_compare_reports_real_differences(tmp_path):
 
 
 def test_anonymizer_replaces_text_and_gz_and_flags_leaks(tmp_path):
-    d = tmp_path/'datasets/supplement-anonymization'; d.mkdir(parents=True)
+    d = tmp_path/'anonymization'; d.mkdir()
     (d/'replacements.csv').write_text('original,replacement,source\n/Users/alice/,/Users/user/,test\nAlice-style,X-style,test\n')
     (d/'blocklist.txt').write_text('# test\n\\bAlice\\b\n/Users/(?!user/)[A-Za-z]\n')
-    a = Anonymizer(tmp_path)
+    a = Anonymizer(d)
     assert a.file('r.md', b'cd /Users/alice/x; Alice-style') == b'cd /Users/user/x; X-style'
     assert gzip.decompress(a.file('r.jsonl.gz', gzip.compress(b'/Users/alice/y'))) == b'/Users/user/y'
     assert a.file('b.png', b'\x89PNG Alice') == b'\x89PNG Alice'

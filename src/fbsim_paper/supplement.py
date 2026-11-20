@@ -7,7 +7,6 @@ ASSETS = Path(__file__).parent/'assets'/'supplement'
 NAME = 'fbsim-supplementary'
 FC = 'freeciv-source/worlds/freeciv/fbsim_v3'
 MP = 'micropolis-source-deliveries/micropolis-data-20260924-v1/extracted/micropolis'
-ANON = 'datasets/supplement-anonymization'
 
 # Files under the archive's datasets/ that `build` (all steps, incl. case-study) reads, as globs; `**` spans folders.
 INPUTS = [
@@ -26,7 +25,8 @@ INPUTS = [
 # Items Appendix F describes that `build` does not read; the Micropolis results are packed into one .tar.xz.
 EXTRAS = ['freeciv-source-deliveries/natcond-replays-20260923-v1/*']
 PACKED = {f'{MP}/results.tar.xz': [f'{MP}/{d}/**' for d in ['runs', 'ground_truth', 'binary', 'continuous', 'knowledge_eval']]}
-EXCLUDE = ['*/.DS_Store', '*/cache/*', f'{MP}/*.png', f'{MP}/*.pdf']
+# Model replies are left out: the Micropolis reply caches and the measles replies.
+EXCLUDE = ['*/.DS_Store', '*/cache/*', 'measles-case-study/timeseries/data/forecasts/*']
 # Supplement files replaced by reviewer-facing versions.
 OVERRIDES = {'measles-case-study/README.md': ASSETS/'measles-README.md'}
 TEXT = ('.json', '.jsonl', '.csv', '.md', '.txt', '.tex', '.sh', '.log', '.py', '.yaml', '.toml', '.html', '.bib')
@@ -39,11 +39,14 @@ def _select(root, patterns):
 
 
 class Anonymizer:
-    """Applies the archive's exact-text replacements and checks the blocklist."""
-    def __init__(self, data):
-        with open(data/ANON/'replacements.csv', newline='') as f:
+    """Applies exact-text replacements and checks the blocklist, from the anonymization folder `anon`."""
+    def __init__(self, anon):
+        anon = Path(anon)
+        if not (anon/'replacements.csv').is_file() or not (anon/'blocklist.txt').is_file():
+            raise ValueError(f'{anon} lacks replacements.csv or blocklist.txt; pass --anonymization')
+        with open(anon/'replacements.csv', newline='') as f:
             self.rows = [(r['original'], r['replacement']) for r in csv.DictReader(f)]
-        lines = (data/ANON/'blocklist.txt').read_text().splitlines()
+        lines = (anon/'blocklist.txt').read_text().splitlines()
         self.block = re.compile('|'.join(f'(?:{l})' for l in lines if l.strip() and not l.startswith('#')), re.I)
         self.edited = {}
 
@@ -82,7 +85,7 @@ def _commit(paper):
     return subprocess.run(['git', '-C', str(paper), 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
 
 
-def run(data, paper, out=None, allow_dirty=False, max_mb=95):
+def run(data, paper, anonymization, out=None, allow_dirty=False, max_mb=95):
     data, paper = Path(data), Path(paper)
     if not (paper/'main.tex').is_file(): raise ValueError(f'{paper} is not the manuscript checkout: no main.tex')
     if not (paper/'.git').exists(): raise ValueError(f'{paper} is not a Git checkout; the supplement is named after its commit')
@@ -94,7 +97,7 @@ def run(data, paper, out=None, allow_dirty=False, max_mb=95):
     zpath = out.parent/f'{out.name}.zip'
     if out.exists() or zpath.exists(): raise ValueError(f'{out} or {zpath} exists; the supplement is never overwritten')
     if any((p/'.git').exists() for p in [out.parent, *out.parent.parents]): raise ValueError('Output must be outside Git checkouts')
-    anon = Anonymizer(data)
+    anon = Anonymizer(anonymization)
     ds = data/'datasets'
     top = out/NAME
     copied = []

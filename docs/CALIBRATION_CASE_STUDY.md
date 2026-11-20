@@ -6,11 +6,10 @@ forecasts and historical outcomes, checks the saved measles scoring and targets,
 computes calibration/uncertainty/sensitivities, and renders the two-bar figure.
 It never calls providers, runs simulators, downloads inputs, or edits the manuscript.
 
-## Private inputs
+## Inputs
 
-The inputs are not included in this repository or downloaded by the command.
-Keep them, and the output directory, outside Git. This command is independent of
-the frozen `validate` route and does not claim to validate the entire data archive.
+The inputs are in the data folder, not in this repository, and the command never downloads them.
+Keep the output directory outside Git.
 
 - `--freeciv-root`: the retained `worlds/freeciv/fbsim_v3` directory containing
   `sets/draw_v1/continuous_300.json`,
@@ -21,17 +20,17 @@ the frozen `validate` route and does not claim to validate the entire data archi
   Scores must include the `measles` stratum and the smaller `measles_named` cohort
   for the paired domain-label sensitivity. Historical series files supply the
   original `history` and `future` arrays, independently checked against scored targets.
-- `--measles-roster`: a private JSON object mapping the historical evaluation's
+- `--measles-roster`: a JSON object mapping the historical evaluation's
   canonical model IDs to ECI values, exported from its `experiments/eci_scores.py`
   `ECI_SCORES` dictionary. Do not substitute the current ICLR model roster: the
   cross-domain panels differ. ECI is used only in secondary descriptive diagnostics;
   some historical ECI entries are estimates. The mapping is also the canonical
   filename-to-model lookup used by the original audit. Its SHA-256 is recorded.
 
-In the private data archive, the FreeCiv root is
+In the data folder, the FreeCiv root is
 `datasets/freeciv-source/worlds/freeciv/fbsim_v3`, and the measles root and roster
 are `datasets/measles-case-study/timeseries` and
-`datasets/measles-case-study/measles-roster.json` (no raw responses, so no parser audit).
+`datasets/measles-case-study/measles-roster.json`.
 Any of the three paths not given defaults to these, under `--data-root` (or `FBSIM_DATA_ROOT`):
 
 ```sh
@@ -51,18 +50,11 @@ fbsim-paper case-study \
 Output must be new and outside all input directories and Git checkouts. A failed
 run is left for inspection; it has no passing `run-status.json`. Use another new
 output directory to rerun. The worker runs under the existing Python network guard.
-The inputs are read-only; all generated arrays and receipts are private outputs.
+The inputs are read-only.
 
-To also check parsing against original responses, add:
-
-```sh
-  --freeciv-raw-repo "$RETAINED_FREECIV_GIT_CHECKOUT"
-```
-
-This needs `data/forecasts/<model-slug>/measles/<series-id>.json` under the measles
-root, plus the archived FreeCiv `calls.jsonl.gz` in the specified Git checkout.
-The default raw-call revision is `daca5a15af759f4124960e30694bff15256b7f5d`;
-`--freeciv-raw-ref` overrides it explicitly. No Git fetch is performed. A run
+To also check parsing against the original responses, add `--parser-audit`. It reads the measles replies,
+`data/forecasts/<model-slug>/measles/<series-id>.json` under the measles root, and the FreeCiv replies,
+`results/run2b_2026-09-20/batched/*/calls.jsonl.gz` under the FreeCiv root; the data folder has both. A run
 without this option reports `parser_audit: NOT_RUN`, never a parser-audit pass.
 The primary data are not silently repaired: the parser sensitivity excludes
 forecasts whose quantiles cannot be independently recovered and matched.
@@ -116,18 +108,14 @@ uncertainty and generalization claims.
 - `calibration_case_study.csv` and `.pdf/.svg/.png`: two bars, 25% reference line,
   cluster intervals, label “FreeCiv / 150 turns ahead”; no embedded caption.
 - Input and analysis-source hash manifests, `verification.json`, `uncertainty-method.json`,
-  `run-config.json`, `run-status.json`: private provenance and completion receipts.
+  `run-config.json`, `run-status.json`: provenance and completion receipts.
 
 The aggregate plot CSV corresponds to manuscript
 `data/calibration_case_study.csv`, and the PDF to
 `figures/calibration_case_study.pdf`. `fbsim-paper build case-study` (part of the
 default build) runs this command on the archive's inputs in a temporary directory and
 copies only those two files into the manuscript; review the diff there as for any
-build output. `case-study` itself never writes to the manuscript. Never copy the
-private arrays, source hashes, raw parsing excerpts or run receipts into Git.
+build output. `case-study` itself never writes to the manuscript.
 
-`tests/test_calibration.py` uses synthetic data, so hosted CI needs no private
-archive. Scientific code originated in the local offline calibration audit;
-original script hashes and migration scope are in `CALIBRATION_SOURCE_MAPPING.json`.
-The historical forecast collection and model roster are external inputs, not
-newly distributed code or data.
+`tests/test_calibration.py` uses synthetic data, so hosted CI needs no data folder.
+The scientific code originated in the local offline calibration audit.

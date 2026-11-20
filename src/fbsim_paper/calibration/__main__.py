@@ -21,11 +21,11 @@ def main():
     diagnostics.run(fc, ts, scores, out)
     context.run(ts, out)
     robustness.run(out)
-    if config['raw_repo']:
-        parser_audit.run(out, ts, fc, Path(config['raw_repo']), config['raw_ref'])
+    if config['parser_audit']:
+        parser_audit.run(out, ts, fc)
     figures.run(out)
     (out/'run-status.json').write_text(json.dumps(dict(status='PASS', network_guard='PASS',
-        parser_audit='PASS' if config['raw_repo'] else 'NOT_RUN', simulations=0, model_calls=0), indent=2)+'\n')
+        parser_audit='PASS' if config['parser_audit'] else 'NOT_RUN', simulations=0, model_calls=0), indent=2)+'\n')
 
 
 if __name__ == '__main__':

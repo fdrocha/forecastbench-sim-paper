@@ -3,8 +3,9 @@
 
     python export_candidates.py --bank BANK_V1_DIR --sets SETS_DIR --out OUT_DIR
 
-Run once, by hand, on the bank_v1/<world>.pkl files of draw/bank_v1.py (not in the archive); the build reads its
-outputs. Writes binary_candidates.csv (every binary candidate with 0 < q < 1, the draw's pool) and
+Run once, by hand, on the bank_v1/<world>.pkl files of draw/bank_v1.py (kept, unpublished, in the archive's
+private-data/datasets/freeciv-working-20260903); the build reads its outputs.
+Writes binary_candidates.csv (every binary candidate with 0 < q < 1, the draw's pool) and
 continuous_candidates.npz (every continuous candidate the draw could pick: count and value families with a positive
 replay median and interquartile range, with its 1,000 replay values). Ids are the draw's, <world>:b<i> and
 <world>:c<i>; the asked questions are checked against them.

@@ -31,65 +31,26 @@
       "production": false
     },
     {
-      "id": "validate",
-      "command": "python -m fbsim_paper validate --data-root \"$FBSIM_DATA_ROOT\"",
-      "inputs": "external private data manifest and hashes",
-      "outputs": "validation JSON",
+      "id": "check-data",
+      "command": "python -m fbsim_paper check-data --data-root \"$FBSIM_DATA_ROOT\" [--write]",
+      "inputs": "the data folder and its SHA256SUMS.txt; the installed benchmark scorers",
+      "outputs": "stdout JSON (missing, changed and added files; scorers differing from the pin); nonzero exit on any",
       "schema_version": "1",
-      "access": "public code; restricted inputs required",
-      "runtime": "seconds; scales with input bytes",
+      "access": "public code; the data folder required",
+      "runtime": "about a minute; scales with input bytes",
       "cost_usd": 0,
       "network": false,
-      "side_effects": "none",
-      "production": false
-    },
-    {
-      "id": "cached-reproduction",
-      "command": "python -m fbsim_paper reproduce --data-root \"$FBSIM_DATA_ROOT\" --output \"$NEW_OUTPUT\"",
-      "inputs": "f214afe3 snapshot, retained calls, accepted fixed-state production/rescore artifacts",
-      "outputs": "disposable paper/analysis tree, regenerated scores/figures, verification.json",
-      "schema_version": "legacy preserved + manifest v1",
-      "access": "public code; restricted inputs required",
-      "runtime": "approximately minutes; measured run recorded in verification",
-      "cost_usd": 0,
-      "network": false,
-      "side_effects": "creates a new output directory only",
-      "production": false
-    },
-    {
-      "id": "cached-freeciv",
-      "command": "python -m fbsim_paper reproduce-freeciv --data-root \"$FBSIM_DATA_ROOT\" --output \"$NEW_OUTPUT\"",
-      "inputs": "manifests/cached-worlds-20260924.json and frozen paper snapshot",
-      "outputs": "disposable paper outputs, run.log, verification.json",
-      "schema_version": "legacy preserved + manifest v1",
-      "access": "public code; restricted inputs required",
-      "runtime": "seconds to several minutes; no engine runs",
-      "cost_usd": 0,
-      "network": false,
-      "side_effects": "new output directory only",
-      "production": false
-    },
-    {
-      "id": "cached-micropolis",
-      "command": "python -m fbsim_paper reproduce-micropolis --data-root \"$FBSIM_DATA_ROOT\" --output \"$NEW_OUTPUT\"",
-      "inputs": "manifests/cached-worlds-20260924.json and frozen paper snapshot",
-      "outputs": "disposable paper outputs, run.log, verification.json",
-      "schema_version": "legacy preserved + manifest v1",
-      "access": "public code; restricted inputs required",
-      "runtime": "seconds to several minutes; no engine runs",
-      "cost_usd": 0,
-      "network": false,
-      "side_effects": "new output directory only",
+      "side_effects": "none; --write rewrites SHA256SUMS.txt",
       "production": false
     },
     {
       "id": "build",
       "command": "fbsim-paper build [micropolis] [freeciv] [starsim] [combined] [case-study]",
-      "inputs": "$FBSIM_DATA_ROOT/datasets/paper-inputs, cached Starsim/FreeCiv/measles archive folders, this checkout's scripts",
+      "inputs": "$FBSIM_DATA_ROOT (datasets/paper-inputs and the world folders), this checkout's scripts",
       "outputs": "generated tables, figures, macros and data files in the manuscript checkout ($FBSIM_PAPER_ROOT)",
       "schema_version": "1",
-      "access": "public code; restricted inputs required",
-      "runtime": "about 3 minutes for all steps; no engine runs",
+      "access": "public code; the data folder required",
+      "runtime": "about 7 minutes for all steps; no engine runs",
       "cost_usd": 0,
       "network": false,
       "side_effects": "overwrites generated files in the manuscript checkout (refused if it has uncommitted changes there, unless --allow-dirty); review with git there",
@@ -97,21 +58,21 @@
     },
     {
       "id": "case-study",
-      "command": "fbsim-paper case-study --data-root \"$FBSIM_DATA_ROOT\" --output \"$NEW_CALIBRATION_OUTPUT\" [--freeciv-root DIR] [--measles-root DIR] [--measles-roster FILE]",
-      "inputs": "Retained FreeCiv forecasts/replays, historical measles scores/series and model roster; optional archived raw responses",
-      "outputs": "Private diagnostics, source hashes, bootstrap/sensitivity tables and manuscript two-bar figure",
-      "access": "Private inputs; not distributed",
+      "command": "fbsim-paper case-study --data-root \"$FBSIM_DATA_ROOT\" --output \"$NEW_CALIBRATION_OUTPUT\" [--freeciv-root DIR] [--measles-root DIR] [--measles-roster FILE] [--parser-audit]",
+      "inputs": "FreeCiv forecasts/replays, historical measles scores/series and model roster; with --parser-audit, the FreeCiv and measles raw replies",
+      "outputs": "diagnostics, source hashes, bootstrap/sensitivity tables and the manuscript two-bar figure",
+      "access": "public code; the data folder required",
       "network": false,
       "production": false,
       "cost_usd": 0,
-      "side_effects": "Creates a new private output directory only; no archive or manuscript changes"
+      "side_effects": "Creates a new output directory only; no data or manuscript changes"
     },
     {
       "id": "supplement",
-      "command": "fbsim-paper supplement [--out NEW_DIR]",
-      "inputs": "$FBSIM_DATA_ROOT (incl. datasets/supplement-anonymization) and the committed manuscript checkout ($FBSIM_PAPER_ROOT)",
+      "command": "fbsim-paper supplement [--anonymization DIR] [--out NEW_DIR]",
+      "inputs": "$FBSIM_DATA_ROOT, the anonymization folder (default private-data/datasets/supplement-anonymization beside it) and the committed manuscript checkout ($FBSIM_PAPER_ROOT)",
       "outputs": "anonymized reviewer supplement folder and zip beside the archive",
-      "access": "Private inputs; output is for OpenReview upload by the authors",
+      "access": "private anonymization rules; output is for OpenReview upload by the authors",
       "network": false,
       "production": false,
       "cost_usd": 0,
@@ -129,5 +90,5 @@
       "side_effects": "none"
     }
   ],
-  "production_replay": "not exposed; separate explicit authorization, engine dependencies and private configs required"
+  "production_replay": "not exposed; separate explicit authorization, engine dependencies and production configs required"
 }

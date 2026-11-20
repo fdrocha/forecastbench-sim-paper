@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Install the local forecastbench-sim checkout and this repository into .venv-build (editable), then run
-# `fbsim-paper build` with the given arguments. .venv-build is separate from .venv, which keeps the pinned
-# benchmark that validate and reproduce check. Settings come from the shell, else from .env:
+# For changing a scorer in forecastbench-sim and seeing its effect on the paper before moving the pin: install the
+# local forecastbench-sim checkout and this repository into .venv-build (editable), then run `fbsim-paper build`
+# with the given arguments. The normal build is `fbsim-paper build` in .venv, which install.sh makes with the
+# pinned benchmark; build warns when the scorers differ from the pin. Settings come from the shell, else from .env:
 # FBSIM_REPO_ROOT (the forecastbench-sim checkout), FBSIM_PAPER_ROOT and FBSIM_DATA_ROOT.
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")" && pwd)

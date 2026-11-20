@@ -22,8 +22,7 @@ def archive_inputs(data):
     return data/FREECIV, data/MEASLES, data/ROSTER
 
 
-def run(freeciv_root, measles_root, measles_roster, output, raw_repo=None,
-        raw_ref='daca5a15af759f4124960e30694bff15256b7f5d'):
+def run(freeciv_root, measles_root, measles_roster, output, parser_audit=False):
     fc, ts, roster, out = (Path(p).expanduser().resolve()
                           for p in [freeciv_root, measles_root, measles_roster, output])
     if out.exists():
@@ -33,7 +32,7 @@ def run(freeciv_root, measles_root, measles_roster, output, raw_repo=None,
                 ts/'data/scores', ts/'data/series/measles', roster]
     for p in required:
         if not p.exists():
-            raise ValueError(f'Missing private input: {p}; this command does not download inputs')
+            raise ValueError(f'Missing input: {p}; this command does not download inputs')
     if not list((fc/'results/run2b_2026-09-20/batched').glob('*/results.jsonl')):
         raise ValueError('No FreeCiv retained forecast files')
     if not list((ts/'data/scores').glob('*.csv')):
@@ -48,14 +47,14 @@ def run(freeciv_root, measles_root, measles_roster, output, raw_repo=None,
             isinstance(k, str) and isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
             for k, v in scores.items()):
         raise ValueError('Measles roster must be a JSON object mapping model IDs to ECI scores')
-    if raw_repo is not None:
-        raw_repo = Path(raw_repo).expanduser().resolve()
+    if parser_audit:
         if not (ts/'data/forecasts').is_dir():
-            raise ValueError('Parser audit needs retained measles data/forecasts')
-        subprocess.run(['git', '-C', str(raw_repo), 'cat-file', '-e', raw_ref+'^{commit}'], check=True)
+            raise ValueError('Parser audit needs the measles replies in data/forecasts')
+        if not list((fc/'results/run2b_2026-09-20/batched').glob('*/calls.jsonl.gz')):
+            raise ValueError('Parser audit needs the FreeCiv replies (calls.jsonl.gz)')
     out.mkdir(parents=True)
     config = dict(freeciv_root=str(fc), measles_root=str(ts), measles_roster=str(roster),
-                  output=str(out), raw_repo=str(raw_repo) if raw_repo else None, raw_ref=raw_ref)
+                  output=str(out), parser_audit=parser_audit)
     # This receipt is private, like every output of this command.
     (out/'run-config.json').write_text(json.dumps(config, indent=2)+'\n')
     (out/'roster-provenance.json').write_text(json.dumps(
@@ -69,5 +68,5 @@ def run(freeciv_root, measles_root, measles_roster, output, raw_repo=None,
     env['PYTHONPATH'] = str(guard)+os.pathsep+os.pathsep.join(sys.path)
     subprocess.run([sys.executable, '-m', 'fbsim_paper.calibration', str(out/'run-config.json')],
                    env=env, check=True)
-    return dict(status='PASS', output=str(out), parser_audit=raw_repo is not None,
+    return dict(status='PASS', output=str(out), parser_audit=parser_audit,
                 scope='Retained FreeCiv and historical measles; no providers or simulators')

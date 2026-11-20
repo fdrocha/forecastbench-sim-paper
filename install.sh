@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create .venv with the pinned benchmark that validate and reproduce check, this repository (editable)
+# Create .venv with the pinned benchmark (the environment of the normal build), this repository (editable)
 # and the test dependencies. Reruns update it in place.
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")" && pwd)

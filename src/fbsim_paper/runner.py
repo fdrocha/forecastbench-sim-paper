@@ -1,148 +1,94 @@
-"""Offline cached-paper reproduction. Production and provider code are never executed."""
+"""ForecastBench-Sim paper analysis: build the manuscript's generated files from the data folder, and check them."""
 from pathlib import Path
-import argparse,json,hashlib,subprocess,os,sys,shutil,time
-from fbsim_benchmark.scoring import pandemic
-ASSETS=Path(__file__).parent/'assets'
-def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
-def validate(data):
- manifest=data/'manifests/homes-inputs-20260924.json'
- if not manifest.is_file():raise ValueError('Missing data manifest: '+str(manifest)+'; set --data-root or FBSIM_DATA_ROOT to the versioned private data home. Public synthetic smoke needs no private data.')
- m=json.loads(manifest.read_text())
- for row in m['files']:
-  p=(data/row['path']).resolve()
-  if not p.is_relative_to(data.resolve()):raise ValueError('Input escapes data root')
-  if sha(p)!=row['sha256']:raise ValueError('Input hash mismatch: '+row['path'])
- pin=json.loads((ASSETS/'benchmark-pin.json').read_text());assert sha(Path(pandemic.__file__))==pin['pandemic_scoring_sha256'],'Benchmark scoring pin mismatch'
- for filename,h in pin['scoring_hashes'].items():
-  if sha(Path(pandemic.__file__).parent/filename)!=h:raise ValueError('Benchmark scoring pin mismatch: '+filename)
- return dict(status='PASS',files_verified=len(m['files']),analysis_baseline=m['analysis_baseline'],latest_manuscript=m['latest_manuscript'],benchmark_pin=pin)
-def analysis_root(data,analysis):
- """Assemble the Starsim analysis checkout from assets and the archive's cached calls."""
- shutil.copytree(ASSETS/'analysis',analysis)
- old=data/'datasets/analysis-original/results/causal';dst=analysis/'results/causal'
- # Exact cached call files and required historical reference distributions, no launchers.
- for rel in ['rerun_lowest','data/worlds']:
-  shutil.copytree(old/rel,dst/rel,dirs_exist_ok=True)
- for name in ['worlds.json','worlds_hold.json','models.csv']:
-  shutil.copyfile(old/'starsim_causal'/name,dst/'starsim_causal'/name)
- return analysis
-def reproduce(data,out):
- checks=validate(data)
- if out.exists():raise ValueError('Output must be a new directory')
- out.mkdir(parents=True);start=time.monotonic();paper=out/'paper';ref=data/'datasets/paper-f214afe3';shutil.copytree(ref,paper)
- for p in paper.rglob('*'):
-  if p.is_file():p.chmod(p.stat().st_mode|0o200)
- before={str(p.relative_to(paper)):(sha(p),p.stat().st_mtime_ns) for p in paper.rglob('*') if p.is_file()}
- analysis=analysis_root(data,out/'analysis')
- guard=str(ASSETS/'offline');env=dict(os.environ);env.update(PYTHONDONTWRITEBYTECODE='1',MPLCONFIGDIR=str(out/'mpl'),MPLBACKEND='Agg',PYTHONPATH=guard+os.pathsep+os.pathsep.join(sys.path))
- probe=subprocess.run([sys.executable,'-c',"import socket;socket.create_connection(('127.0.0.1',9))"],env=env,capture_output=True,text=True)
- assert probe.returncode and 'offline reproduction guard' in probe.stderr
- cmd=[sys.executable,str(ASSETS/'starsim/integrate_fixed_state.py'),'--paper-root',str(paper),'--analysis-root',str(analysis),'--audit-root',str(data/'datasets/starsim-audit/production_v1'),'--out',str(out/'generated')]
- refit=[sys.executable,str(ASSETS/'combined/refit_combined.py'),'--paper-root',str(paper),'--out',str(out/'generated')]
- with (out/'reproduction.log').open('w') as f:
-  for c in (cmd,refit):subprocess.run(c,env=env,stdout=f,stderr=subprocess.STDOUT,check=True)
- # Run every check, so one mismatch does not hide the others; main fails afterwards if any did.
- failures=[]
- def check(name,ok):
-  if not ok:failures.append(name)
-  return ok
- byte=[dict(path=rel,sha256=sha(paper/rel),byte_equal=check(rel,sha(paper/rel)==sha(ref/rel))) for rel in ['data/starsim/starsim_excess_long.csv','data/combined_score.json','data/combined_matched_panel.json','figures/fig_starsim_unconditional.png','figures/fig_starsim_interventional.png','figures/fig_starsim_horizon.png','figures/fig_combined_score.png']]
- text=lambda p:subprocess.check_output(['pdftotext','-layout',str(p),'-'])
- pdf=[dict(path=rel,pdf_text_equal=check(rel,text(paper/rel)==text(ref/rel))) for rel in [f'figures/{n}.pdf' for n in ['fig_starsim_unconditional','fig_starsim_interventional','fig_starsim_horizon','fig_combined_score']]]
- # integration_numbers.json no longer repeats the combined step's numbers (in combined_score.json and
- # combined_matched_panel.json), so compare the Starsim step's keys.
- nums=lambda p:{k:json.loads((p/'data/starsim/integration_numbers.json').read_text())[k] for k in ('starsim','inputs')}
- integration=dict(path='data/starsim/integration_numbers.json',keys=['starsim','inputs'],equal=check('data/starsim/integration_numbers.json',nums(paper)==nums(ref)))
- result=json.loads((paper/'data/combined_score.json').read_text());check('nine-cell rho',len(result['single'])==9 and result['rho']==0.8626086956521738)
- checks.update(byte_checks=byte,integration_numbers_check=integration,pdf_text_checks=pdf,nine_cell_rho=result['rho'],checks_run=len(byte)+len(pdf)+2,failures=failures,elapsed_seconds=time.monotonic()-start,network_guard_probe='PASS',simulations=0,model_calls=0,scope='Cached Starsim/combined reproduction; frozen Micropolis/FreeCiv inputs, not full replay regeneration')
- from .cached import _compare
- checks['all_generated_comparisons']=_compare(ref,paper,before)
- (out/'verification.json').write_text(json.dumps(checks,indent=2)+'\n');return checks
+import argparse, json, os, subprocess, sys
+
 
 def load_env():
- """Fill unset variables from .env in this checkout, else the current directory; shell and flags win."""
- from dotenv import load_dotenv
- for d in (Path(__file__).resolve().parents[2],Path.cwd()):
-  if (d/'.env').is_file():load_dotenv(d/'.env',override=False);return
+    """Fill unset variables from .env in this checkout, else the current directory; shell and flags win."""
+    from dotenv import load_dotenv
+    for d in (Path(__file__).resolve().parents[2], Path.cwd()):
+        if (d/'.env').is_file(): load_dotenv(d/'.env', override=False); return
+
 
 def main():
- load_env()
- p=argparse.ArgumentParser(description=__doc__);s=p.add_subparsers(dest='command',required=True);s.add_parser('smoke')
- for name in ['validate','reproduce','reproduce-freeciv','reproduce-micropolis']:
-  q=s.add_parser(name);q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
-  if name.startswith('reproduce'):q.add_argument('--output',type=Path,required=True)
- q=s.add_parser('check-archive',help='Check that v1 files are unchanged and list files added since v1')
- q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
- q=s.add_parser('build',help='Regenerate the manuscript checkout\'s generated files in place')
- q.add_argument('steps',nargs='*',help='Any of micropolis, freeciv, starsim, combined, case-study (default: all, in that order)')
- q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
- q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
- q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
- q.add_argument('--include-micropolis-conditionals',action='store_true',help='Opt into the additional Micropolis studies and eleven-cell score; default preserves the nine-cell ICLR R&R')
- q=s.add_parser('case-study',help='Offline FreeCiv/measles calibration in a new private output directory')
- q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'),help='Data archive; supplies any input path not given')
- q.add_argument('--freeciv-root',type=Path)
- q.add_argument('--measles-root',type=Path,help='Historical timeseries folder containing data/')
- q.add_argument('--measles-roster',type=Path,help='Private JSON mapping model IDs to ECI scores')
- q.add_argument('--output',type=Path,required=True)
- q.add_argument('--freeciv-raw-repo',type=Path,help='Also audit parsing; Git checkout retaining archived FreeCiv calls')
- q.add_argument('--freeciv-raw-ref',default='daca5a15af759f4124960e30694bff15256b7f5d')
- q=s.add_parser('supplement',help='Write the anonymized reviewer supplement (folder and zip) next to the data archive')
- q.add_argument('--data-root',type=Path,default=os.environ.get('FBSIM_DATA_ROOT'))
- q.add_argument('--paper-root',type=Path,default=os.environ.get('FBSIM_PAPER_ROOT'))
- q.add_argument('--out',type=Path,help='New output folder (default: fbsim-supplementary-<manuscript commit> beside the archive)')
- q.add_argument('--allow-dirty',action='store_true',help='Run even if the manuscript has uncommitted changes under data/ or figures/')
- q.add_argument('--max-mb',type=float,default=95,help='Fail if the zip is larger (default 95)')
- q=s.add_parser('compare',help='Compare a rebuilt paper folder with the expected one (data/ and figures/)')
- q.add_argument('--strict-figures',action='store_true',help='Also fail on image encoding or rendering differences (except PDF metadata)')
- q.add_argument('expected',type=Path);q.add_argument('rebuilt',type=Path)
- a=p.parse_args()
- if a.command=='compare':
-  from .compare import run
-  try:result=run(a.expected,a.rebuilt,a.strict_figures)
-  except ValueError as e:p.error(str(e))
-  print(json.dumps(result,indent=2))
-  if result['status']!='PASS':sys.exit(f"{len(result['differences'])} files differ")
-  return
- if a.command=='case-study':
-  from .case_study import run,archive_inputs
-  paths=[a.freeciv_root,a.measles_root,a.measles_roster]
-  if None in paths:
-   if a.data_root is None:p.error('Pass --freeciv-root, --measles-root and --measles-roster, or --data-root DIR (or set FBSIM_DATA_ROOT) for the archive\'s copies.')
-   paths=[x if x is not None else d for x,d in zip(paths,archive_inputs(Path(a.data_root).expanduser()))]
-  try:result=run(*paths,a.output,a.freeciv_raw_repo,a.freeciv_raw_ref)
-  except (ValueError,FileNotFoundError) as e:p.error(str(e))
-  print(json.dumps(result,indent=2));return
- if a.command=='smoke':
-  assert pandemic.crps5([1,1,1,1,1],[1])==0;print(json.dumps(dict(status='PASS',scope='import and synthetic scoring only; no paper inputs')))
- else:
-  if a.data_root is None:p.error('Pass --data-root DIR or set FBSIM_DATA_ROOT (in the shell or .env); no default private path is assumed.')
-  a.data_root=Path(a.data_root).expanduser()
-  if a.command=='check-archive':
-   from .archive import check
-   result=check(a.data_root.resolve().parent);print(json.dumps(result,indent=2))
-   if result['missing'] or result['changed']:sys.exit(f"{len(result['missing'])} v1 files missing, {len(result['changed'])} changed")
-   return
-  if a.command=='supplement':
-   if a.paper_root is None:p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')
-   from .supplement import run
-   try:result=run(a.data_root.resolve(),Path(a.paper_root).expanduser().resolve(),a.out,a.allow_dirty,a.max_mb)
-   except ValueError as e:p.error(str(e))
-   print(json.dumps(result,indent=2))
-   if result['status']!='PASS':sys.exit(result['status'])
-   return
-  if a.command=='build':
-   if a.paper_root is None:p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')
-   from .build import run
-   try:run(a.steps,a.data_root.resolve(),Path(a.paper_root).expanduser().resolve(),a.allow_dirty,a.include_micropolis_conditionals)
-   except ValueError as e:p.error(str(e))
-   except subprocess.CalledProcessError as e:sys.exit(f'build failed: {e.cmd[1]} exited with status {e.returncode}')
-   return
-  try:
-   if a.command.startswith('reproduce-'):
-    from .cached import run
-    result=run(a.command.removeprefix('reproduce-'),Path(a.data_root).resolve(),a.output.resolve())
-   else:result=validate(Path(a.data_root).resolve()) if a.command=='validate' else reproduce(Path(a.data_root).resolve(),a.output.resolve())
-  except (ValueError,FileNotFoundError) as e:p.error(str(e))
-  print(json.dumps(result,indent=2))
-  if result.get('failures'):sys.exit(f"{len(result['failures'])} of {result['checks_run']} checks failed: "+', '.join(result['failures']))
+    load_env()
+    p = argparse.ArgumentParser(description=__doc__); s = p.add_subparsers(dest='command', required=True)
+    s.add_parser('smoke', help='Check imports and synthetic scoring; no data needed')
+    data_help = 'The data folder (the one holding datasets/ and SHA256SUMS.txt); default FBSIM_DATA_ROOT'
+    q = s.add_parser('check-data', help='Check the data folder against its SHA256SUMS.txt and the scorers against the pin')
+    q.add_argument('--data-root', type=Path, default=os.environ.get('FBSIM_DATA_ROOT'), help=data_help)
+    q.add_argument('--write', action='store_true', help='Rewrite SHA256SUMS.txt from the current files instead')
+    q = s.add_parser('build', help='Regenerate the manuscript checkout\'s generated files in place')
+    q.add_argument('steps', nargs='*', help='Any of micropolis, freeciv, starsim, combined, case-study (default: all, in that order)')
+    q.add_argument('--data-root', type=Path, default=os.environ.get('FBSIM_DATA_ROOT'), help=data_help)
+    q.add_argument('--paper-root', type=Path, default=os.environ.get('FBSIM_PAPER_ROOT'))
+    q.add_argument('--allow-dirty', action='store_true', help='Run even if the manuscript has uncommitted changes under data/ or figures/')
+    q.add_argument('--include-micropolis-conditionals', action='store_true', help='Opt into the additional Micropolis studies and eleven-cell score; default preserves the nine-cell ICLR R&R')
+    q = s.add_parser('case-study', help='Offline FreeCiv/measles calibration in a new output directory')
+    q.add_argument('--data-root', type=Path, default=os.environ.get('FBSIM_DATA_ROOT'), help='Data folder; supplies any input path not given')
+    q.add_argument('--freeciv-root', type=Path)
+    q.add_argument('--measles-root', type=Path, help='Historical timeseries folder containing data/')
+    q.add_argument('--measles-roster', type=Path, help='JSON mapping model IDs to ECI scores')
+    q.add_argument('--output', type=Path, required=True)
+    q.add_argument('--parser-audit', action='store_true', help='Also re-parse the raw FreeCiv and measles replies')
+    q = s.add_parser('supplement', help='Write the anonymized reviewer supplement (folder and zip) next to the data archive')
+    q.add_argument('--data-root', type=Path, default=os.environ.get('FBSIM_DATA_ROOT'), help=data_help)
+    q.add_argument('--paper-root', type=Path, default=os.environ.get('FBSIM_PAPER_ROOT'))
+    q.add_argument('--anonymization', type=Path, help='Folder with replacements.csv and blocklist.txt (default: private-data/datasets/supplement-anonymization beside the data folder)')
+    q.add_argument('--out', type=Path, help='New output folder (default: fbsim-supplementary-<manuscript commit> beside the archive)')
+    q.add_argument('--allow-dirty', action='store_true', help='Run even if the manuscript has uncommitted changes under data/ or figures/')
+    q.add_argument('--max-mb', type=float, default=95, help='Fail if the zip is larger (default 95)')
+    q = s.add_parser('compare', help='Compare a rebuilt paper folder with the expected one (data/ and figures/)')
+    q.add_argument('--strict-figures', action='store_true', help='Also fail on image encoding or rendering differences (except PDF metadata)')
+    q.add_argument('expected', type=Path); q.add_argument('rebuilt', type=Path)
+    a = p.parse_args()
+
+    if a.command == 'smoke':
+        from fbsim_benchmark.scoring import pandemic
+        assert pandemic.crps5([1, 1, 1, 1, 1], [1]) == 0
+        print(json.dumps(dict(status='PASS', scope='import and synthetic scoring only; no paper inputs'))); return
+    if a.command == 'compare':
+        from .compare import run
+        try: result = run(a.expected, a.rebuilt, a.strict_figures)
+        except ValueError as e: p.error(str(e))
+        print(json.dumps(result, indent=2))
+        if result['status'] != 'PASS': sys.exit(f"{len(result['differences'])} files differ")
+        return
+    if a.command == 'case-study':
+        from .case_study import run, archive_inputs
+        paths = [a.freeciv_root, a.measles_root, a.measles_roster]
+        if None in paths:
+            if a.data_root is None: p.error('Pass --freeciv-root, --measles-root and --measles-roster, or --data-root DIR (or set FBSIM_DATA_ROOT).')
+            paths = [x if x is not None else d for x, d in zip(paths, archive_inputs(Path(a.data_root).expanduser()))]
+        try: result = run(*paths, a.output, a.parser_audit)
+        except (ValueError, FileNotFoundError) as e: p.error(str(e))
+        print(json.dumps(result, indent=2)); return
+
+    if a.data_root is None: p.error('Pass --data-root DIR or set FBSIM_DATA_ROOT (in the shell or .env); no default path is assumed.')
+    data = Path(a.data_root).expanduser().resolve()
+    if a.command == 'check-data':
+        from . import datacheck
+        if a.write:
+            print(json.dumps(dict(written=str(data/datacheck.SUMS), files=datacheck.write(data)), indent=2)); return
+        try: result = datacheck.check(data)
+        except ValueError as e: p.error(str(e))
+        result['scorers_differing_from_pin'] = datacheck.pin()
+        print(json.dumps(result, indent=2))
+        problems = [f'{len(result[k])} {k}' for k in ('missing', 'changed', 'added', 'scorers_differing_from_pin') if result[k]]
+        if problems: sys.exit(', '.join(problems))
+        return
+    if a.paper_root is None: p.error('Pass --paper-root DIR or set FBSIM_PAPER_ROOT (in the shell or .env).')
+    paper = Path(a.paper_root).expanduser().resolve()
+    if a.command == 'supplement':
+        from .supplement import run
+        anon = a.anonymization or data.parent/'private-data/datasets/supplement-anonymization'
+        try: result = run(data, paper, anon, a.out, a.allow_dirty, a.max_mb)
+        except ValueError as e: p.error(str(e))
+        print(json.dumps(result, indent=2))
+        if result['status'] != 'PASS': sys.exit(result['status'])
+        return
+    if a.command == 'build':
+        from .build import run
+        try: run(a.steps, data, paper, a.allow_dirty, a.include_micropolis_conditionals)
+        except ValueError as e: p.error(str(e))
+        except subprocess.CalledProcessError as e: sys.exit(f'build failed: {e.cmd[1]} exited with status {e.returncode}')

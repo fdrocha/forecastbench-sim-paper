@@ -1,9 +1,10 @@
-"""Regenerate the manuscript's generated files in place, from the data archive and this checkout's scripts."""
+"""Regenerate the manuscript's generated files in place, from the data folder and this checkout's scripts."""
 from pathlib import Path
-import json, shutil, subprocess, sys, tempfile, time
-from .cached import _env, commands
-from .runner import ASSETS, analysis_root
+import json, os, shutil, subprocess, sys, tempfile, time
 from .experiments import CONDITIONALS_ENV
+from .datacheck import pin
+
+ASSETS = Path(__file__).parent/'assets'
 
 # In dependency order: the combined step refits the combined score and writes the cross-world tables from the
 # other three steps' files.
@@ -15,6 +16,27 @@ FREECIV_CANDIDATES = 'datasets/freeciv-candidates'
 FREECIV_FRACTIONS = 'datasets/freeciv-source-deliveries/freeciv-v3-daca5a15-v1/sets/draw_v1/selection_fractions_bank_tails_mirrors.json'
 MICROPOLIS_NATCOND = 'datasets/micropolis-natcond'
 MICROPOLIS_INTCOND = 'datasets/micropolis-intcond'
+
+def _env(out, extra=()):
+    """Environment for a step's scripts: the offline guard first on the path, no production data or engine."""
+    env = dict(os.environ)
+    # Do not inherit a coauthor's live paper destination or provider config.
+    env.pop('PAPER_REPO_PATH', None)
+    env.update(PYTHONDONTWRITEBYTECODE='1', MPLBACKEND='Agg', MPLCONFIGDIR=str(out/'mpl'),
+               PYTHONPATH=os.pathsep.join([str(ASSETS/'offline'), *map(str, extra), *sys.path]),
+               MICROPOLIS_CORE_PATH=str(out/'engine-unavailable'), FBSIM_DATA_DIR=str(out/'no-production-data'))
+    return env
+
+def analysis_root(data, analysis):
+    """Assemble the Starsim analysis checkout from assets and the archive's cached calls."""
+    shutil.copytree(ASSETS/'analysis', analysis)
+    old = data/'datasets/analysis-original/results/causal'; dst = analysis/'results/causal'
+    # Exact cached call files and required historical reference distributions, no launchers.
+    for rel in ['rerun_lowest', 'data/worlds']:
+        shutil.copytree(old/rel, dst/rel, dirs_exist_ok=True)
+    for name in ['worlds.json', 'worlds_hold.json', 'models.csv']:
+        shutil.copyfile(old/'starsim_causal'/name, dst/'starsim_causal'/name)
+    return analysis
 
 def stage(inputs, paper):
     """Copy each file of paper-inputs to the same path under the manuscript's data/, if its content differs."""
@@ -38,7 +60,10 @@ def _commands(step, data, paper, tmp, include_conditionals=False):
     if step == 'micropolis':
         # The baselines and the conditionals first: analyze_paper.py draws them in the capability figure (the
         # baselines' JSON beside the inputs, which it delivers with the data; the conditionals' summaries in the paper).
-        env, cmds = commands(step, data, paper, tmp, data/INPUTS/'micropolis')
+        # analyze_paper.py writes beside its CSVs, so it gets a disposable copy of the inputs.
+        shutil.copytree(data/INPUTS/'micropolis', tmp/'inputs')
+        env = _env(tmp, [ASSETS/'micropolis']); env['PAPER_REPO_PATH'] = str(paper)
+        cmds = [[py, str(ASSETS/'micropolis/scripts/analyze_paper.py'), '--datadir', str(tmp/'inputs'), '--outdir', str(tmp/'figures'), '--no-extra']]
         common = ['--datadir', str(tmp/'inputs'), '--model-names', str(data/INPUTS/'model_names.csv'), '--paper-root', str(paper)]
         natcond = [py, str(ASSETS/'micropolis/scripts/micropolis_natcond.py'), '--natcond', str(data/MICROPOLIS_NATCOND)] + common
         intcond = [py, str(ASSETS/'micropolis/scripts/micropolis_intcond.py'), '--intcond', str(data/MICROPOLIS_INTCOND)] + common
@@ -113,6 +138,8 @@ def run(steps, data, paper, allow_dirty=False, include_conditionals=False):
                          + '\n  '.join(dirty) + '\nCommit or discard them, or pass --allow-dirty.')
     start = time.monotonic()
     print(f'paper:  {paper}\ninputs: {inputs}\nsteps:  {", ".join(steps)}')
+    if differ := pin():
+        print(f'WARNING: the installed scorers differ from the benchmark pin ({", ".join(differ)}); this is not a pinned build.')
     if include_conditionals and 'combined' in steps:
         print('Optional conditional studies enabled: the nine-cell generalization diagnostic is not regenerated; existing diagnostic files describe the original instrument.')
     for p in stage(inputs, paper): print(f'Staged {p.relative_to(paper)}')

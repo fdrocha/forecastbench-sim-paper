@@ -4,8 +4,7 @@ The conservative sensitivity excludes any forecast whose five quantiles cannot
 be independently recovered from explicit labelled output and matched. Detected
 format differences are logged, not silently repaired in the primary analysis.
 """
-from pathlib import Path
-import json,re,subprocess,gzip
+import json,re,gzip
 import numpy as np
 import pandas as pd
 
@@ -26,7 +25,7 @@ def read_lines(text,keys,last=False):
     return out
 
 
-def run(out, ts, fc, raw_repo, raw_ref):
+def run(out, ts, fc):
     reports={};summary=[];issues=[]
     for name in ['freeciv','measles']:
         with np.load(out/f'{name}-diagnostics.npz') as packed:
@@ -67,10 +66,8 @@ def run(out, ts, fc, raw_repo, raw_ref):
                 for path in sorted((fc/'results/run2b_2026-09-20/batched').glob('*/results.jsonl')):
                     rs=[json.loads(s) for s in path.read_text().splitlines()]
                     if rs[0]['model']!=model:continue
-                    rel='worlds/freeciv/fbsim_v3/results/run2b_2026-09-20/batched/'+path.parent.name+'/calls.jsonl.gz'
-                    raw=subprocess.check_output(['git','show',raw_ref+':'+rel],cwd=raw_repo)
                     calls={}
-                    for line in gzip.decompress(raw).splitlines():
+                    for line in gzip.decompress((path.parent/'calls.jsonl.gz').read_bytes()).splitlines():
                         c=json.loads(line);calls[c['call_id']]=c
                     for r in rs:
                         if r['item'] not in by_item or r['arm']!='t1':continue

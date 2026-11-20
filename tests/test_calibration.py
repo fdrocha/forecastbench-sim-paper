@@ -70,7 +70,7 @@ def test_context_pairs_items_and_requires_identical_truth(tmp_path):
 
 def test_missing_inputs_and_existing_output_fail_before_writing(tmp_path):
     output=tmp_path/'new'
-    with pytest.raises(ValueError,match='Missing private input'):
+    with pytest.raises(ValueError,match='Missing input'):
         run(tmp_path/'fc',tmp_path/'ts',tmp_path/'roster.json',output)
     assert not output.exists()
     output.mkdir();(output/'sentinel').write_text('keep')
@@ -82,7 +82,7 @@ def test_missing_inputs_and_existing_output_fail_before_writing(tmp_path):
 def test_case_study_cli_has_explicit_paths():
     result=subprocess.run([sys.executable,'-m','fbsim_paper','case-study','--help'],capture_output=True,text=True)
     assert result.returncode==0
-    for flag in ['--freeciv-root','--measles-root','--measles-roster','--output','--freeciv-raw-repo']:
+    for flag in ['--freeciv-root','--measles-root','--measles-roster','--output','--parser-audit']:
         assert flag in result.stdout
 
 
