@@ -3,8 +3,9 @@
 
 As micropolis_natcond.py, with an intervention X done once right after the snapshot in place of the revealed fact:
 the target is P(A | do X), the frequency of A over 1,000 continuations with X, against P(A) over 1,000 without.
-Reads the draw and the model answers (the data archive's datasets/micropolis-intcond), whose results take each
-key's last parsed row (a later row supersedes an earlier one there; see its README).
+Reads the draw and the model answers (datasets/micropolis-intcond under the data root; the archive keeps it,
+unpublished, in private-data/), whose results take each key's last parsed row (a later row supersedes an earlier
+one there; see its README).
 
 Writes into the manuscript checkout:
 

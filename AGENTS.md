@@ -4,6 +4,6 @@ Releases follow the README's "Releasing a paper version".
 
 Data archive (`~/fri/all-data`): `data/` is what we publish with the paper, `private-data/` (same paths under `datasets/`) is what we keep but do not publish, and `metadata/` is the record of how the September 2026 archive was assembled, kept but no longer maintained.
 - Every `fbsim-paper` command takes the `data/` folder as `--data-root` (or `FBSIM_DATA_ROOT`), so it runs the same on the published data.
-- `data/` holds everything the commands read, everything in the reviewer supplement and every stored model response. Change it only when asked, report every deletion, and move what should not be published to `private-data/` rather than deleting it.
+- `data/` holds everything the commands read, everything in the reviewer supplement and every model response behind the paper's results (the optional Micropolis conditional studies, which the paper does not use, are in `private-data/`). Change it only when asked, report every deletion, and move what should not be published to `private-data/` rather than deleting it.
 - `data/SHA256SUMS.txt` covers every file in `data/`. `fbsim-paper check-data` checks it and the scorer pin; after a deliberate change to `data/`, rewrite it with `fbsim-paper check-data --write`.
 - The reviewer supplement is made only with `fbsim-paper supplement`, which anonymizes it with the rules in `private-data/datasets/supplement-anonymization`.

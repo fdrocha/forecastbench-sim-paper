@@ -47,7 +47,7 @@ fbsim-paper build micropolis combined  # only these steps (always run in that or
 fbsim-paper build micropolis combined --include-micropolis-conditionals  # optional eleven-cell experiments
 ```
 
-The default preserves the ICLR R&R nine-cell instrument even if additional Micropolis conditional files are present. The explicit flag runs those studies and includes their scores and plots. For standalone asset scripts, set `FBSIM_INCLUDE_MICROPOLIS_CONDITIONALS=1` to opt in; otherwise they retain nine cells. These extra studies are not part of the ICLR R&R version. The held-out-world diagnostic (`generalization.py`) covers only the nine cells, so the eleven-cell build skips it; its existing files still describe the nine-cell instrument.
+The default preserves the ICLR R&R nine-cell instrument. The explicit flag runs the Micropolis natural- and interventional-conditional studies and includes their scores and plots. For standalone asset scripts, set `FBSIM_INCLUDE_MICROPOLIS_CONDITIONALS=1` to opt in; otherwise they retain nine cells. These extra studies are not part of the ICLR R&R version, and their data (`micropolis-natcond`, `micropolis-intcond`) is not in the published data folder: the flag needs a data root that holds them (the archive keeps them in `private-data/datasets/`). The held-out-world diagnostic (`generalization.py`) covers only the nine cells, so the eleven-cell build skips it; its existing files still describe the nine-cell instrument.
 
 1. It refuses to run if the manuscript has uncommitted changes under `data/` or `figures/`, which it would overwrite; `--allow-dirty` overrides.
 2. It copies each file of `$FBSIM_DATA_ROOT/datasets/paper-inputs` to the same path under the manuscript's `data/`, where the content differs. The other data folders are read in place; the manuscript keeps copies of `paper-inputs`, so edit them in the data folder, not in the manuscript. It warns if the installed scorers differ from the benchmark pin.
@@ -80,8 +80,8 @@ Reviewers rebuild into a copy of the snapshot and check it with `fbsim-paper com
 
 ## Data
 
-The data folder holds everything the commands read, everything in the reviewer supplement, and every stored model
-response. It is released under CC BY 4.0 (its `LICENSE`); its `README.md` describes each dataset and the notice for
+The data folder holds everything the commands read, everything in the reviewer supplement, and every model
+response behind the paper's results. It is released under CC BY 4.0 (its `LICENSE`); its `README.md` describes each dataset and the notice for
 model responses, and its `licenses/` holds the simulators' and data sources' licenses.
 `SHA256SUMS.txt` at its top lists every other file:
 
@@ -98,7 +98,6 @@ Every model response behind the paper's results is in the data folder, except:
 - **Micropolis batching ablation:** six of Llama 4 Scout's replies are missing. In the 50-question setting, the
   replies behind 300 of its 1,000 forecasts were overwritten after scoring by a later run that shared their prompts;
   the forecasts are in the scored results.
-- **Micropolis natural conditionals:** three turn-2 prompts of DeepSeek V4 Flash returned empty replies twice.
 - **FreeCiv:** some replies are empty because the model ran to its output limit (Kimi K2 26 and DeepSeek V4 Flash
   26 to 27 in run 1, and 10 in DeepSeek V4 Flash's rerun).
 - **Starsim:** 139 of the 5,184 planned calls failed without a reply (Kimi K2 has 182 of 216, DeepSeek V4 Flash 111).

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """The Micropolis natural conditionals: figure, appendix table, macros and per-model scores.
 
-Reads the draw and the model answers (the data archive's datasets/micropolis-natcond), and from the gathered
-paper data the binary questions (for the independence baseline) and model_scores.csv (for ECI). Scores each
-model on the cells it answered at both turns, as FreeCiv's score_v2.py does (fbsim_paper.natcond); a cell a
-model left unanswered is left out of that model's means, and every output reports the coverage. The helpers
-here are shared with micropolis_intcond.py.
+Reads the draw and the model answers (datasets/micropolis-natcond under the data root; the archive keeps it,
+unpublished, in private-data/), and from the gathered paper data the binary questions (for the independence
+baseline) and model_scores.csv (for ECI). Scores each model on the cells it answered at both turns, as FreeCiv's
+score_v2.py does (fbsim_paper.natcond); a cell a model left unanswered is left out of that model's means, and every
+output reports the coverage. The helpers here are shared with micropolis_intcond.py.
 
 Writes into the manuscript checkout:
 
